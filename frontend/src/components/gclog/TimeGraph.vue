@@ -343,7 +343,7 @@ function initChart(ref) {
   chartInstance = echarts.init(ref.value, isDark.value ? 'dark' : null);
   chartInstance.on('legendselectchanged', (params) => {
     const expectedTypes = {};
-    Object.keys(params.selected).forEach((name) => (expectedTypes[this.name2type[name]] = true));
+    Object.keys(params.selected).forEach((name) => (expectedTypes[name2type[name]] = true));
     loadData(expectedTypes);
   });
 }
