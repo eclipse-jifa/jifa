@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.time.Duration;
 import java.time.Instant;
+import java.net.*;
+import java.util.Enumeration;
 
 @StaticWorker
 @Component
@@ -50,8 +52,7 @@ public class CurrentStaticWorker extends ConfigurationAccessor {
 
     @PostConstruct
     private void init() throws IOException {
-        InetAddress localHost = InetAddress.getLocalHost();
-        String hostAddress = localHost.getHostAddress();
+        String hostAddress = getLocalHostExactAddress();
         current = this.staticWorkerRepo.findByHostAddress(hostAddress).orElseGet(() -> {
             StaticWorkerEntity worker = new StaticWorkerEntity();
             worker.setHostAddress(hostAddress);
@@ -77,5 +78,22 @@ public class CurrentStaticWorker extends ConfigurationAccessor {
         current.setAvailableSpace(storageService.getAvailableSpace());
         current.setTotalSpace(storageService.getTotalSpace());
         current = staticWorkerRepo.save(current);
+    }
+
+    private String getLocalHostExactAddress() throws IOException {
+        Enumeration<NetworkInterface> allNetworkInterfaces = NetworkInterface.getNetworkInterfaces();
+        while (allNetworkInterfaces.hasMoreElements()) {
+            NetworkInterface networkInterface = allNetworkInterfaces.nextElement();
+            if (!networkInterface.isLoopback() && !networkInterface.isVirtual() && networkInterface.isUp()) {
+                Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    InetAddress inetAddress = addresses.nextElement();
+                    if (inetAddress instanceof Inet4Address) {
+                        return inetAddress.getHostAddress();
+                    }
+                }
+            }
+        }
+        return InetAddress.getLocalHost().getHostAddress();
     }
 }

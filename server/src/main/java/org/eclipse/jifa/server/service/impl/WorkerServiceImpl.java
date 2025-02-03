@@ -65,6 +65,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserter;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.DefaultUriBuilderFactory;
@@ -127,7 +128,13 @@ public class WorkerServiceImpl extends ConfigurationAccessor implements WorkerSe
                                           .doOnConnected(conn -> conn
                                                   .addHandlerLast(new ReadTimeoutHandler(Long.MAX_VALUE, TimeUnit.SECONDS))
                                                   .addHandlerLast(new WriteTimeoutHandler(Long.MAX_VALUE, TimeUnit.SECONDS)));
+
+        final int maxInMemorySize = 10 * 1024 * 1024;
+        final ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(maxInMemorySize))
+                .build();
         webClient = WebClient.builder()
+                             .exchangeStrategies(exchangeStrategies)
                              .clientConnector(new ReactorClientHttpConnector(httpClient))
                              .build();
 
@@ -211,14 +218,10 @@ public class WorkerServiceImpl extends ConfigurationAccessor implements WorkerSe
     @Override
     public long forwardUploadRequestToStaticWorker(StaticWorkerEntity worker, FileType type, MultipartFile file) throws Throwable {
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        try {
-            builder.part("file", new ByteArrayResource(file.getBytes()))
-                   .filename(file.getOriginalFilename() != null ? file.getOriginalFilename() : Constant.DEFAULT_FILENAME)
-                   .contentType(MediaType.APPLICATION_OCTET_STREAM);
-            builder.part("type", type.name());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        builder.part("file", file.getResource())
+               .filename(file.getOriginalFilename() != null ? file.getOriginalFilename() : Constant.DEFAULT_FILENAME)
+               .contentType(MediaType.APPLICATION_OCTET_STREAM);
+        builder.part("type", type.name());
 
         UriBuilder uriBuilder = new DefaultUriBuilderFactory().builder()
                                                               .scheme("http")
