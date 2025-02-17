@@ -21,7 +21,7 @@
 
 Eclipse Jifa 是一款在线分析工具，支持分析 Java 堆转储、GC 日志、线程转储以及 JFR 文件。
 
-关于项目的更多信息请访问 [GitHub Pages](https://eclipse-jifa.github.io/jifa/zh)。
+关于项目的更多信息请访问 [GitHub Pages](https://eclipse-jifa.github.io/jifa/zh/)。
 
 ## 快速上手
 
@@ -47,7 +47,7 @@ curl -fsSL https://raw.githubusercontent.com/eclipse/jifa/main/jifa.sh | bash -s
 
 ## 相关链接
 
-- [GitHub Pages](https://eclipse.github.io/jifa/zh/)
+- [GitHub Pages](https://eclipse-jifa.github.io/jifa/zh/)
 - 钉钉交流群二维码
 
   <div>

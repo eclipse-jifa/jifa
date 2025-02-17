@@ -46,4 +46,4 @@ curl -fsSL https://raw.githubusercontent.com/eclipse/jifa/main/jifa.sh | bash -s
 Note: Please make sure that Docker is installed.
 
 ## Links
-- [GitHub Pages](https://eclipse.github.io/jifa)
+- [GitHub Pages](https://eclipse-jifa.github.io/jifa/)
