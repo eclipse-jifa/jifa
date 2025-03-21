@@ -12,7 +12,7 @@
  ********************************************************************************/
 plugins {
     id 'application'
-    id "org.springframework.boot" version "3.1.4"
+    id "org.springframework.boot" version "3.2.12"
 }
 
 apply from: "$rootDir/gradle/java.gradle"
