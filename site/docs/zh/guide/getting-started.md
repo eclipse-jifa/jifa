@@ -29,6 +29,10 @@ $ curl -fsSL https://raw.githubusercontent.com/eclipse/jifa/main/jifa.sh | bash 
 命令并修改服务端口或分析本地文件，请参考此脚本。
 :::
 
+## jifa-jpackage.sh
+
+使用`jpackage`命令打包成二进制安装包，便于在本地使用（单机模式）。
+
 ## 使用已发布的构建
 
 平台支持：linux/amd64、linux/arm64，其他平台请自行构建。
