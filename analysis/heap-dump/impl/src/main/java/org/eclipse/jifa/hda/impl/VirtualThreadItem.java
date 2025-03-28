@@ -85,6 +85,7 @@ public class VirtualThreadItem extends Thread.Item {
 
     @Override
     public boolean isDaemon() {
-        return (Boolean) result.getColumnValue(row, COLUMN_DAEMON);
+        Object value = result.getColumnValue(row, COLUMN_DAEMON);
+        return value != null && Boolean.parseBoolean(value.toString());
     }
 }
