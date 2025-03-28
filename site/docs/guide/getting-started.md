@@ -30,6 +30,10 @@ If you prefer to use the `docker` directly and also want to modify the server po
 please refer to it.
 :::
 
+## jifa-jpackage.sh
+
+Use the `jpackage` command to package it into a binary installation package for easy local use (standalone mode).
+
 ## Releases
 
 Platform support: linux/amd64, linux/arm64. For other platforms, please build from source code.
