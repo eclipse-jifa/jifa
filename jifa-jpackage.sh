@@ -1,3 +1,15 @@
+#!/bin/sh
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0
+#
+# SPDX-License-Identifier: EPL-2.0
+
 ./gradlew clean build -x test
 
 # Path of the input directory that contains the files to be packaged (absolute path or relative to the current directory)
@@ -9,7 +21,11 @@ name="Eclipse Jifa"
 osName=$(uname -s)
 arch=$(uname -m)
 version="1.0.0"
-packageName="${name}-${osName}-${arch}"
+if [ "${osName}" = "Darwin" ]; then
+  iconPath=package/macOS/launcher.icns
+else
+  iconPath=package/linux/launcher-1024x1024.png
+fi
 
 echo "Packaging ${name}..."
 
@@ -26,8 +42,7 @@ jpackage --name "${name}" \
         --java-options -Djdk.util.zip.disableZip64ExtraFieldValidation=true \
         --java-options -Djifa.role=standalone-worker \
         --java-options -Djifa.open-browser-when-ready=true \
-        --about-url https://eclipse-jifa.github.io/jifa/
+        --about-url https://eclipse-jifa.github.io/jifa/ \
+        --icon "${iconPath}"
 
-mv "${destinationPath}/${name}-${version}.dmg" "${destinationPath}/${packageName}-${version}.dmg"
-
-echo "Complete!"
+echo "Completed!"
