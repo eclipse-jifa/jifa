@@ -24,7 +24,7 @@ version="1.0.0"
 if [ "${osName}" = "Darwin" ]; then
   iconPath=package/macOS/launcher.icns
 else
-  iconPath=package/linux/launcher-1024x1024.png
+  iconPath=package/linux/launcher.png
 fi
 
 echo "Packaging ${name}..."
