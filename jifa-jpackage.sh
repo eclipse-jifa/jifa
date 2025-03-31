@@ -19,8 +19,8 @@ destinationPath="server/build/distributions"
 
 name="Eclipse Jifa"
 osName=$(uname -s)
-arch=$(uname -m)
 version="1.0.0"
+
 if [ "${osName}" = "Darwin" ]; then
   iconPath=package/macOS/launcher.icns
 else
@@ -39,6 +39,7 @@ jpackage --name "${name}" \
         --main-jar jifa.jar \
         --java-options --add-opens=java.base/java.lang=ALL-UNNAMED \
         --java-options --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED \
+        --java-options -Djava.awt.headless=false \
         --java-options -Djdk.util.zip.disableZip64ExtraFieldValidation=true \
         --java-options -Djifa.role=standalone-worker \
         --java-options -Djifa.open-browser-when-ready=true \

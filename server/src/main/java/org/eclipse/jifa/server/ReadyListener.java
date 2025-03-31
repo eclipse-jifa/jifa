@@ -75,13 +75,19 @@ class ReadyListener extends ConfigurationAccessor {
     }
 
     private void openBrowser(String url) {
+        ProcessBuilder pb;
+        if (SystemUtils.IS_OS_WINDOWS) {
+            pb = new ProcessBuilder("cmd", "/c", "start", url);
+        } else if (SystemUtils.IS_OS_MAC) {
+            pb = new ProcessBuilder("/usr/bin/open", url);
+        } else {
+            // Linux
+            pb = new ProcessBuilder("xdg-open", url);
+            pb.environment().put("DISPLAY", ":0");
+        }
+        pb.inheritIO();
         try {
-            if (SystemUtils.IS_OS_WINDOWS) {
-                Runtime.getRuntime().exec("cmd /c start " + url);
-            } else {
-                // macOS or Linux
-                Runtime.getRuntime().exec("/usr/bin/open " + url);
-            }
+            pb.start();
         } catch (IOException e) {
             log.error("Unable to open browser, please check!", e);
         }
