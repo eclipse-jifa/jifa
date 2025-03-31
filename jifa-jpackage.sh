@@ -10,6 +10,8 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 
+set -e
+
 ./gradlew clean build -x test
 
 # Path of the input directory that contains the files to be packaged (absolute path or relative to the current directory)
@@ -44,6 +46,7 @@ jpackage --name "${name}" \
         --java-options -Djifa.role=standalone-worker \
         --java-options -Djifa.open-browser-when-ready=true \
         --about-url https://eclipse-jifa.github.io/jifa/ \
-        --icon "${iconPath}"
+        --icon "${iconPath}" \
+        --verbose \
 
 echo "Completed!"

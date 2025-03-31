@@ -10,10 +10,8 @@ REM http://www.eclipse.org/legal/epl-2.0
 REM
 REM SPDX-License-Identifier: EPL-2.0
 
-gradlew clean build -x test
+call gradlew clean build -x test
 
-REM Path of the input directory that contains the files to be packaged (absolute path or relative to the current directory)
-REM All files in the input directory will be packaged into the application image.
 set inputPath=server\build\libs
 set destinationPath=server\build\distributions
 
@@ -24,10 +22,10 @@ set iconPath=package\windows\launcher.ico
 echo Packaging %name%...
 
 REM For "jpackage", please refer to: https://docs.oracle.com/en/java/javase/17/jpackage/packaging-overview.html#GUID-C1027043-587D-418D-8188-EF8F44A4C06A
-jpackage --name "%name%" ^
+call jpackage --name "%name%" ^
          --vendor "Eclipse" ^
          --app-version "%version%" ^
-         --description "Eclipse Jifa (abbreviated as Jifa) stands for \"Java Issues Finding Assistant\". Online Analyzer for Heap Dump, GC Log, Thread Dump and JFR File." ^
+         --description "Eclipse Jifa (abbreviated as Jifa) stands for 'Java Issues Finding Assistant'. Online Analyzer for Heap Dump, GC Log, Thread Dump and JFR File." ^
          --input "%inputPath%" ^
          --dest "%destinationPath%" ^
          --main-jar jifa.jar ^
@@ -37,6 +35,13 @@ jpackage --name "%name%" ^
          --java-options -Djifa.role=standalone-worker ^
          --java-options -Djifa.open-browser-when-ready=true ^
          --about-url https://eclipse-jifa.github.io/jifa/ ^
-         --icon "%iconPath%"
+         --icon "%iconPath%" ^
+         --verbose ^
+         --win-menu ^
+         --win-shortcut ^
+
+if %error level% neq 0 (
+    exit /b 1
+)
 
 echo Completed!
