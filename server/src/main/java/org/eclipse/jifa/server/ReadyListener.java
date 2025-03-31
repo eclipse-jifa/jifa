@@ -78,12 +78,12 @@ class ReadyListener extends ConfigurationAccessor {
         try {
             if (SystemUtils.IS_OS_WINDOWS) {
                 Runtime.getRuntime().exec("cmd /c start " + url);
-            } else if (SystemUtils.IS_OS_MAC) {
+            } else {
+                // macOS or Linux
                 Runtime.getRuntime().exec("/usr/bin/open " + url);
             }
         } catch (IOException e) {
-            // ignored
-            e.printStackTrace();
+            log.error("Unable to open browser, please check!", e);
         }
     }
 }
