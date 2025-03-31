@@ -10,7 +10,7 @@ REM http://www.eclipse.org/legal/epl-2.0
 REM
 REM SPDX-License-Identifier: EPL-2.0
 
-call gradlew clean build -x test
+call gradlew.bat clean build -x test
 
 set inputPath=server\build\libs
 set destinationPath=server\build\distributions
