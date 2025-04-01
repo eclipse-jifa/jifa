@@ -30,7 +30,7 @@ If you prefer to use the `docker` directly and also want to modify the server po
 please refer to it.
 :::
 
-## jifa-jpackage.sh
+## jifa-jpackage.{sh | bat}
 
 Use the `jpackage` command to package it into a binary installation package for easy local use (standalone mode).
 
