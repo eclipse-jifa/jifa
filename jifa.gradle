@@ -13,7 +13,7 @@
 plugins {
     id 'base'
     id 'jacoco-report-aggregation'
-    id "org.springframework.boot" version "3.2.12"
+    id "org.springframework.boot" version "3.3.11"
 }
 
 apply from: "$rootDir/gradle/base.gradle"
