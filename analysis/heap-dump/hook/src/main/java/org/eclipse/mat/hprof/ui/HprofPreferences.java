@@ -24,6 +24,12 @@ public class HprofPreferences {
 
     public static final String ADDITIONAL_CLASS_REFERENCES = "hprofAddClassRefs"; //$NON-NLS-1$
 
+    /** Whether to treat stack frames as pseudo-objects and methods as pseudo-classes */
+    public static final String P_METHODS = "methodsAsClasses"; //$NON-NLS-1$
+    public static final String NO_METHODS_AS_CLASSES = "none"; //$NON-NLS-1$
+    public static final String RUNNING_METHODS_AS_CLASSES = "running"; //$NON-NLS-1$
+    public static final String FRAMES_ONLY = "frames"; //$NON-NLS-1$
+
     public static ThreadLocal<HprofStrictness> TL = new ThreadLocal<>();
 
     public static void setStrictness(HprofStrictness strictness) {
@@ -70,4 +76,14 @@ public class HprofPreferences {
         }
     }
 
+    /**
+     * Preference for whether pseudo-objects should be created
+     * for stack frames and methods.
+     */
+    public static String methodsAsClasses()
+    {
+        String pref = Platform.getPreferencesService().getString(HprofPlugin.getDefault().getBundle().getSymbolicName(),
+                        HprofPreferences.P_METHODS, HprofPreferences.NO_METHODS_AS_CLASSES, null);
+        return pref;
+    }
 }
