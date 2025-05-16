@@ -15,7 +15,7 @@ import java.util.stream.Collectors
 
 plugins {
     id 'java'
-    id "dev.equo.p2deps" version "1.7.3"
+    id "dev.equo.p2deps" version "1.7.8"
 }
 
 apply from: "$rootDir/gradle/base.gradle"
@@ -68,8 +68,9 @@ p2deps {
             it.prop('osgi.arch', arch)
         })
 
-        p2repo 'https://download.eclipse.org/eclipse/updates/4.26/'
+        p2repo 'https://download.eclipse.org/eclipse/updates/4.34/'
         install 'com.ibm.icu'
+        install 'org.apache.aries.spifly.dynamic.bundle'
         install 'org.apache.felix.scr'
         install 'org.eclipse.core.commands'
         install 'org.eclipse.core.contenttype'
@@ -80,7 +81,10 @@ p2deps {
         install 'org.eclipse.equinox.event'
         install 'org.eclipse.equinox.preferences'
         install 'org.eclipse.equinox.registry'
+        install 'org.eclipse.equinox.supplement'
         install 'org.eclipse.osgi'
+        install 'org.eclipse.osgi.services'
+        install 'slf4j.simple'
 
         install 'org.eclipse.help'
         install 'org.eclipse.jface'
@@ -89,16 +93,23 @@ p2deps {
         install 'org.eclipse.ui'
         install 'org.eclipse.platform.feature.group'
 
-
-        p2repo 'https://download.eclipse.org/mat/1.14.0/update-site/'
+        p2repo 'https://download.eclipse.org/mat/1.16.1/update-site/'
         install 'org.eclipse.mat.api'
         install 'org.eclipse.mat.hprof'
         install 'org.eclipse.mat.parser'
         install 'org.eclipse.mat.report'
         install 'org.eclipse.mat.ui'
 
-        p2repo 'https://raw.githubusercontent.com/wiki/eclipse/jifa/resources/MatCalciteRepository-1.5.0/'
+        // Although Eclipse is at 4.34.0 we specify 4.32.0 here, because, Jakarta Annotation-api on
+        // 4.34.0 provides both 2.1.1 and 3.0.0, BUT, 3.0.0 is not compatible. And yet, there is no
+        // way that I found with the p2 plugin to specify download of a specific targeted version.
+        // By using 4.32.0 we get lucky enough that the compatible required deps are all in place.
+        p2repo 'https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/release/4.32.0/'
+        p2repo 'https://vlsi.github.io/mat-calcite-plugin-update-site/stable/'
         install 'MatCalcitePlugin'
+        install 'jakarta.annotation-api'
+        install 'bcutil'
+        install 'bcprov'
     }
 }
 
@@ -112,7 +123,7 @@ def depsDirPath =
             ext {
                 mat_deps_dir_name = depsDirName
                 mat_deps_dir_path = depsDirPath.toAbsolutePath().toString()
-                osgi_jar = 'org.eclipse.osgi-3.18.200.jar'
+                osgi_jar = 'org.eclipse.osgi-3.22.0.jar'
             }
         }
 }
