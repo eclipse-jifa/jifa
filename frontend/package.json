@@ -19,7 +19,7 @@
     "axios-retry": "^3.8.0",
     "chart.js": "^4.4.0",
     "echarts": "^5.4.3",
-    "element-plus": "^2.6.0",
+    "element-plus": "^2.11.0",
     "js-base64": "^3.7.5",
     "js-cookie": "^3.0.5",
     "jsencrypt": "^3.3.2",
