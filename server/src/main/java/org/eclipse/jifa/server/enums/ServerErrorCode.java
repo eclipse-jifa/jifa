@@ -31,6 +31,7 @@ public enum ServerErrorCode implements ErrorCode {
     ELASTIC_WORKER_NOT_READY("Elastic worker not ready"),
     ELASTIC_WORKER_STARTUP_FAILURE("Elastic worker startup failure"),
     NO_AVAILABLE_LOCATION("No available location"),
+    FILE_TOO_LARGE("File size exceeds the maximum allowed limit"),
     ;
 
     private final String message;

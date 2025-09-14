@@ -184,3 +184,30 @@ Default: false
 类型：Path[]
 
 默认值：null
+
+## 文件上传配置
+
+### spring.servlet.multipart.max-file-size
+
+文件上传允许的最大文件大小。
+
+类型：DataSize（如 "512MB"、"2GB"）
+
+默认值：512MB
+
+### spring.servlet.multipart.max-request-size
+
+multipart/form-data 请求允许的最大大小。
+
+类型：DataSize（如 "512MB"、"2GB"）
+
+默认值：512MB
+
+示例：
+```yaml
+spring:
+  servlet:
+    multipart:
+      max-file-size: 2GB
+      max-request-size: 2GB
+```
