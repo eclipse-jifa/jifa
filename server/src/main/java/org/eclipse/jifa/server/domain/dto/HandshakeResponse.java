@@ -25,5 +25,6 @@ public record HandshakeResponse(Role serverRole,
                                 boolean allowRegistration,
                                 PublicKey publicKey,
                                 Set<FileTransferMethod> disabledFileTransferMethods,
-                                User user) {
+                                User user,
+                                long maxFileSize) {
 }

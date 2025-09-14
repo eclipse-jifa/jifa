@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2023 Contributors to the Eclipse Foundation
+ * Copyright (c) 2023, 2024 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -25,6 +25,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.io.IOException;
@@ -39,13 +40,66 @@ public class GlobalExceptionHandler {
     public void handleHttpRequestException(Throwable throwable, HttpServletRequest request, HttpServletResponse response) throws IOException {
         log(throwable, request);
 
+        // Handle WebClient response exceptions
         if (throwable instanceof WebClientResponseException e) {
             response.setStatus(e.getStatusCode().value());
             response.getOutputStream().write(e.getResponseBodyAsByteArray());
             return;
         }
+        
+        // Handle file upload size exceeded exceptions
+        if (throwable instanceof MaxUploadSizeExceededException e) {
+            handleFileUploadSizeExceeded(e, response);
+            return;
+        }
+        
+        // Handle other exceptions
         response.setStatus(getStatusOf(throwable));
         response.getOutputStream().write(ErrorUtil.toJson(throwable));
+    }
+
+    /**
+     * Handle file upload size exceeded exceptions with detailed error message
+     */
+    private void handleFileUploadSizeExceeded(MaxUploadSizeExceededException e, HttpServletResponse response) throws IOException {
+        String maxSize = formatFileSize(e.getMaxUploadSize());
+        String actualSize = extractActualFileSize(e.getMessage(), maxSize);
+        String errorMessage = buildFileSizeErrorMessage(actualSize, maxSize);
+        
+        response.setStatus(getStatusOf(e));
+        response.getOutputStream().write(ErrorUtil.toJson(ServerErrorCode.FILE_TOO_LARGE, errorMessage));
+    }
+
+    /**
+     * Extract actual file size from exception message
+     */
+    private String extractActualFileSize(String exceptionMessage, String fallbackSize) {
+        if (exceptionMessage == null || !exceptionMessage.contains("size (")) {
+            return fallbackSize;
+        }
+        
+        try {
+            int start = exceptionMessage.indexOf("size (") + 6;
+            int end = exceptionMessage.indexOf(")", start);
+            if (start > 6 && end > start) {
+                long actualSizeBytes = Long.parseLong(exceptionMessage.substring(start, end));
+                return formatFileSize(actualSizeBytes);
+            }
+        } catch (Exception ignored) {
+            // Parsing failed, use fallback
+        }
+        
+        return fallbackSize;
+    }
+
+    /**
+     * Build file size error message with actual and maximum sizes
+     */
+    private String buildFileSizeErrorMessage(String actualSize, String maxSize) {
+        if (actualSize.equals(maxSize)) {
+            return String.format("File size exceeds limit. Maximum allowed size: %s", maxSize);
+        }
+        return String.format("File size exceeds limit. Actual size: %s, Maximum allowed size: %s", actualSize, maxSize);
     }
 
     private void log(Throwable throwable, HttpServletRequest request) {
@@ -71,11 +125,26 @@ public class GlobalExceptionHandler {
         if (throwable instanceof AuthenticationException || throwable instanceof AccessDeniedException) {
             return 401;
         }
+        if (throwable instanceof MaxUploadSizeExceededException) {
+            return 413; // Payload Too Large
+        }
         if (throwable instanceof ErrorCodeAccessor errorCodeAccessor) {
             if (ServerErrorCode.ACCESS_DENIED == errorCodeAccessor.getErrorCode()) {
                 return 401;
             }
         }
         return 500;
+    }
+
+    private String formatFileSize(long bytes) {
+        if (bytes < 0) {
+            return "Unknown";
+        }
+        if (bytes < 1024) {
+            return bytes + " B";
+        }
+        int exp = (int) (Math.log(bytes) / Math.log(1024));
+        String pre = "KMGTPE".charAt(exp - 1) + "";
+        return String.format("%.1f %sB", bytes / Math.pow(1024, exp), pre);
     }
 }

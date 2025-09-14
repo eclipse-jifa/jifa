@@ -32,6 +32,13 @@ public class ErrorUtil {
         return json.toString().getBytes(Constant.CHARSET);
     }
 
+    public static byte[] toJson(ErrorCode errorCode, String message) {
+        JsonObject json = new JsonObject();
+        json.addProperty("errorCode", errorCode.name());
+        json.addProperty("message", message);
+        return json.toString().getBytes(Constant.CHARSET);
+    }
+
     private static ErrorCode getErrorCodeOf(Throwable throwable) {
         if (throwable instanceof ErrorCodeAccessor errorCodeAccessor) {
             return errorCodeAccessor.getErrorCode();

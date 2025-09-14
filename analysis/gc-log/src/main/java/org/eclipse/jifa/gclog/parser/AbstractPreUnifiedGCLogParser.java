@@ -449,7 +449,7 @@ public abstract class AbstractPreUnifiedGCLogParser extends AbstractGCLogParser 
     @Data
     private static class GCLogToken {
         private GCLogTokenType type;
-        private String value; // its corresponding string in original text. Some signs like ',' or '）' may have been removed
+        private String value; // its corresponding string in original text. Some signs like ',' or ')' may have been removed
         private int end;  // index of next character after this token in original text
 
         public GCLogToken(String value, int end) {

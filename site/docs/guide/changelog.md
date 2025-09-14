@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 (TBD)
+
+### Features
+
+- **File Upload Enhancement**: Add configurable file size limits with dynamic frontend validation
+
+### Improvements
+
+- Improved file upload user experience with immediate feedback on size violations
+- Enhanced error handling for file upload operations
+
 ## 0.2.0 (2023-10)
 
 ### Feature

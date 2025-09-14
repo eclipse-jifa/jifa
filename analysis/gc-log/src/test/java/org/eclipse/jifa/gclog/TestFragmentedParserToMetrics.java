@@ -55,7 +55,7 @@ public class TestFragmentedParserToMetrics {
                 e.printStackTrace();
             }
             double spendTime = (System.currentTimeMillis() - beginTime) / 1000.;
-            System.out.printf("file %s analysed，%d lines in total，%d metrics produced，duration %fs，%f lines processed per minute，producing %f metrics\n",
+            System.out.printf("file %s analysed, %d lines in total, %d metrics produced, duration %fs, %f lines processed per minute, producing %f metrics\n",
                     file, gclog.size(), result.size(), spendTime, gclog.size()/spendTime*60, result.size()/spendTime*60);
         });
     }

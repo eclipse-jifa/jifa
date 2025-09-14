@@ -21,8 +21,9 @@ import org.eclipse.jifa.server.domain.entity.shared.user.UserEntity;
 import org.eclipse.jifa.server.service.CipherService;
 import org.eclipse.jifa.server.service.UserService;
 import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties;
+import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -42,11 +43,15 @@ public class HandshakeController extends ConfigurationAccessor {
 
     private final Map<String, String> oauth2LoginLinks = new HashMap<>();
 
+    private final MultipartProperties multipartProperties;
+
     public HandshakeController(CipherService cipherService,
                                UserService userService,
-                               @Nullable OAuth2ClientProperties oauth2ClientProperties) {
+                               @Nullable OAuth2ClientProperties oauth2ClientProperties,
+                               MultipartProperties multipartProperties) {
         this.cipherService = cipherService;
         this.userService = userService;
+        this.multipartProperties = multipartProperties;
         if (oauth2ClientProperties != null) {
             Map<String, OAuth2ClientProperties.Registration> registration = oauth2ClientProperties.getRegistration();
             registration.keySet()
@@ -62,6 +67,11 @@ public class HandshakeController extends ConfigurationAccessor {
     public HandshakeResponse handshake() {
         UserEntity userEntity = userService.getCurrentUser();
         User user = userEntity == null ? null : new User(userEntity.getName(), userEntity.isAdmin());
+        
+        // Get file size limit configuration
+        DataSize maxFileSize = multipartProperties.getMaxFileSize();
+        long maxFileSizeBytes = maxFileSize.toBytes();
+        
         return new HandshakeResponse(getRole(),
                                      config.isAllowLogin(),
                                      config.isAllowLogin() ? oauth2LoginLinks : Collections.emptyMap(),
@@ -69,6 +79,7 @@ public class HandshakeController extends ConfigurationAccessor {
                                      config.isAllowRegistration(),
                                      cipherService.getPublicKeyString(),
                                      config.getDisabledFileTransferMethods(),
-                                     user);
+                                     user,
+                                     maxFileSizeBytes);
     }
 }
