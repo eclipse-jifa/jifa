@@ -48,7 +48,7 @@ public class HandshakeController extends ConfigurationAccessor {
     public HandshakeController(CipherService cipherService,
                                UserService userService,
                                @Nullable OAuth2ClientProperties oauth2ClientProperties,
-                               MultipartProperties multipartProperties) {
+                               @Nullable MultipartProperties multipartProperties) {
         this.cipherService = cipherService;
         this.userService = userService;
         this.multipartProperties = multipartProperties;
@@ -69,8 +69,11 @@ public class HandshakeController extends ConfigurationAccessor {
         User user = userEntity == null ? null : new User(userEntity.getName(), userEntity.isAdmin());
         
         // Get file size limit configuration
-        DataSize maxFileSize = multipartProperties.getMaxFileSize();
-        long maxFileSizeBytes = maxFileSize.toBytes();
+        long maxFileSizeBytes = 0;
+        if (multipartProperties != null) {
+            DataSize maxFileSize = multipartProperties.getMaxFileSize();
+            maxFileSizeBytes = maxFileSize.toBytes();
+        }
         
         return new HandshakeResponse(getRole(),
                                      config.isAllowLogin(),
