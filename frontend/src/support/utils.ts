@@ -13,6 +13,7 @@
 import {formatDate} from '@vueuse/core';
 import {ElNotification} from 'element-plus';
 import {h} from 'vue';
+import { useI18n } from 'vue-i18n';
 
 function nullOrUndefined(v: any) {
   return v === null || v === undefined;
@@ -86,6 +87,7 @@ export function showErrorNotification(errorCode: string, message: string) {
     return;
   }
   hasUnclosedError = true;
+  
   ElNotification.error({
     title: errorCode,
     message: h('p', { style: 'word-break: break-all' }, message),

@@ -59,47 +59,17 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handle file upload size exceeded exceptions with detailed error message
+     * Handle file upload size exceeded exceptions with simple, reliable error message
      */
     private void handleFileUploadSizeExceeded(MaxUploadSizeExceededException e, HttpServletResponse response) throws IOException {
         String maxSize = formatFileSize(e.getMaxUploadSize());
-        String actualSize = extractActualFileSize(e.getMessage(), maxSize);
-        String errorMessage = buildFileSizeErrorMessage(actualSize, maxSize);
+        
+        // Log detailed exception for debugging (not exposed to user)
+        log.warn("File upload size exceeded. Max allowed: {} bytes. Exception: {}", e.getMaxUploadSize(), e.getMessage());
         
         response.setStatus(getStatusOf(e));
-        response.getOutputStream().write(ErrorUtil.toJson(ServerErrorCode.FILE_TOO_LARGE, errorMessage));
-    }
-
-    /**
-     * Extract actual file size from exception message
-     */
-    private String extractActualFileSize(String exceptionMessage, String fallbackSize) {
-        if (exceptionMessage == null || !exceptionMessage.contains("size (")) {
-            return fallbackSize;
-        }
-        
-        try {
-            int start = exceptionMessage.indexOf("size (") + 6;
-            int end = exceptionMessage.indexOf(")", start);
-            if (start > 6 && end > start) {
-                long actualSizeBytes = Long.parseLong(exceptionMessage.substring(start, end));
-                return formatFileSize(actualSizeBytes);
-            }
-        } catch (Exception ignored) {
-            // Parsing failed, use fallback
-        }
-        
-        return fallbackSize;
-    }
-
-    /**
-     * Build file size error message with actual and maximum sizes
-     */
-    private String buildFileSizeErrorMessage(String actualSize, String maxSize) {
-        if (actualSize.equals(maxSize)) {
-            return String.format("File size exceeds limit. Maximum allowed size: %s", maxSize);
-        }
-        return String.format("File size exceeds limit. Actual size: %s, Maximum allowed size: %s", actualSize, maxSize);
+        // Return errorCode only, let frontend handle i18n message with maxSize parameter
+        response.getOutputStream().write(ErrorUtil.toJson(ServerErrorCode.FILE_TOO_LARGE, maxSize));
     }
 
     private void log(Throwable throwable, HttpServletRequest request) {

@@ -243,16 +243,26 @@ function validateFileUpload(file) {
 function onUploadError(error, file, fileList) {
   console.error('Upload error:', error);
   
-  // Try to parse error response
+  // Try to extract error message from response
   let errorMessage = _t('uploadFailed');
   if (error && error.response) {
-    try {
-      const responseData = JSON.parse(error.response);
-      if (responseData.message) {
-        errorMessage = responseData.message;
+    let responseData = null;
+    
+    // Check if error.response is already an object or needs parsing
+    if (typeof error.response === 'string') {
+      try {
+        responseData = JSON.parse(error.response);
+      } catch (e) {
+        console.warn('Failed to parse error response as JSON:', e);
       }
-    } catch (e) {
-      // Parsing failed, use default error message
+    } else if (typeof error.response === 'object') {
+      // axios typically provides response as object with data property
+      responseData = error.response.data || error.response;
+    }
+    
+    // Extract message from response data
+    if (responseData && responseData.message) {
+      errorMessage = responseData.message;
     }
   }
   

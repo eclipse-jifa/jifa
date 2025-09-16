@@ -69,10 +69,12 @@ public class HandshakeController extends ConfigurationAccessor {
         User user = userEntity == null ? null : new User(userEntity.getName(), userEntity.isAdmin());
         
         // Get file size limit configuration
-        long maxFileSizeBytes = 0;
+        long maxFileSizeBytes;
         if (multipartProperties != null) {
             DataSize maxFileSize = multipartProperties.getMaxFileSize();
             maxFileSizeBytes = maxFileSize.toBytes();
+        } else {
+            maxFileSizeBytes = Constant.DEFAULT_MAX_FILE_SIZE_BYTES;
         }
         
         return new HandshakeResponse(getRole(),

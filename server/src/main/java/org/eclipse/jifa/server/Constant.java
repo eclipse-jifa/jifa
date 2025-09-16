@@ -92,4 +92,9 @@ public interface Constant extends org.eclipse.jifa.common.Constant {
     String CONFIGURATION_PRIVATE_KEY = "private-key";
 
     String DEFAULT_FILENAME = "file";
+
+    /**
+     * Default maximum file size limit (512MB) - matches Spring Boot's default
+     */
+    long DEFAULT_MAX_FILE_SIZE_BYTES = 512L * 1024L * 1024L;
 }

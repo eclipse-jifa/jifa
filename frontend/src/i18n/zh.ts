@@ -132,6 +132,8 @@ export default {
       waitingForResourceScheduling: '分析资源调度中',
     },
 
+
+
     heapDump,
     gclog,
     threadDump,
