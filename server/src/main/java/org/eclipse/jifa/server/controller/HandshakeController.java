@@ -68,13 +68,13 @@ public class HandshakeController extends ConfigurationAccessor {
         UserEntity userEntity = userService.getCurrentUser();
         User user = userEntity == null ? null : new User(userEntity.getName(), userEntity.isAdmin());
         
-        // Get file size limit configuration
-        long maxFileSizeBytes;
+        // Get upload size limit configuration
+        long maxUploadSize;
         if (multipartProperties != null) {
             DataSize maxFileSize = multipartProperties.getMaxFileSize();
-            maxFileSizeBytes = maxFileSize.toBytes();
+            maxUploadSize = maxFileSize.toBytes();
         } else {
-            maxFileSizeBytes = Constant.DEFAULT_MAX_FILE_SIZE_BYTES;
+            maxUploadSize = Constant.DEFAULT_MAX_UPLOAD_SIZE;
         }
         
         return new HandshakeResponse(getRole(),
@@ -85,6 +85,6 @@ public class HandshakeController extends ConfigurationAccessor {
                                      cipherService.getPublicKeyString(),
                                      config.getDisabledFileTransferMethods(),
                                      user,
-                                     maxFileSizeBytes);
+                                     maxUploadSize);
     }
 }

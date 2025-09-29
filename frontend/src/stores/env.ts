@@ -66,7 +66,7 @@ export const useEnv = defineStore('env', {
     uploadHeader: {}, // used by upload
 
     disabledFileTransferMethods: [],
-    maxFileSize: 536870912 // Default 512MB
+    maxFileSize: Infinity // Unlimited size by default
   }),
 
   getters: {
@@ -94,7 +94,8 @@ export const useEnv = defineStore('env', {
       this.allowRegistration = data.allowRegistration;
       this.oauth2LoginLinks = data.oauth2LoginLinks;
       this.publicKey = data.publicKey;
-      this.maxFileSize = data.maxFileSize || 536870912; // Default 512MB
+      // Use the actual server configuration
+      this.maxFileSize = data.maxFileSize || Infinity;
       if (data.user) {
         this.user = data.user;
       } else if (!this.allowAnonymousAccess) {

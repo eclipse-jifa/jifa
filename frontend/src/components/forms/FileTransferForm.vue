@@ -24,6 +24,7 @@ import { fileTypeMap } from '@/composables/file-types';
 import axios from 'axios';
 import { useEnv } from '@/stores/env';
 import { t } from '@/i18n/i18n';
+import { prettySize } from '@/support/utils';
 
 defineProps({
   visible: Boolean
@@ -191,7 +192,7 @@ const fileList = ref([]);
 
 // Get file size limit from server configuration
 const maxFileSize = computed(() => env.maxFileSize);
-const maxFileSizeFormatted = computed(() => formatFileSize(maxFileSize.value));
+const maxFileSizeFormatted = computed(() => prettySize(maxFileSize.value));
 
 function resetStates() {
   processing.value = false;
@@ -224,9 +225,9 @@ function onUploadSuccess(fileId) {
 
 // File upload validation
 function validateFileUpload(file) {
-  // Check file size
-  if (file.size > maxFileSize.value) {
-    const fileSizeStr = formatFileSize(file.size);
+  // Check file size against server limit
+  if (maxFileSize.value !== Infinity && file.size > maxFileSize.value) {
+    const fileSizeStr = prettySize(file.size);
     error(_t('fileSizeExceeded', { 
       fileSize: fileSizeStr, 
       maxSize: maxFileSizeFormatted.value 
@@ -243,29 +244,15 @@ function validateFileUpload(file) {
 function onUploadError(error, file, fileList) {
   console.error('Upload error:', error);
   
-  // Try to extract error message from response
+  // Default error message
   let errorMessage = _t('uploadFailed');
-  if (error && error.response) {
-    let responseData = null;
-    
-    // Check if error.response is already an object or needs parsing
-    if (typeof error.response === 'string') {
-      try {
-        responseData = JSON.parse(error.response);
-      } catch (e) {
-        console.warn('Failed to parse error response as JSON:', e);
-      }
-    } else if (typeof error.response === 'object') {
-      // axios typically provides response as object with data property
-      responseData = error.response.data || error.response;
-    }
-    
-    // Extract message from response data
-    if (responseData && responseData.message) {
-      errorMessage = responseData.message;
-    }
+  
+  // Get error message from server response or fallback to default
+  if (error?.response?.data?.message) {
+    errorMessage = error.response.data.message;
   }
   
+  // Display the error message
   error(errorMessage);
 }
 
@@ -274,14 +261,7 @@ function onFileExceed(files, fileList) {
   error(_t('fileCountLimit'));
 }
 
-// Format file size
-function formatFileSize(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
+
 
 function doTransfer() {
   resetStates();
@@ -454,7 +434,7 @@ const dialogWidth = computed(() => {
           </el-icon>
           <div class="el-upload__text">{{ _t('dragOrClickToUpload') }}</div>
           <template #tip>
-            <div class="el-upload__tip">
+            <div class="el-upload__tip" v-if="maxFileSize !== Infinity">
               {{ _t('fileSizeLimit', { size: maxFileSizeFormatted }) }}
             </div>
           </template>

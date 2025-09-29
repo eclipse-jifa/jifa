@@ -94,7 +94,7 @@ public interface Constant extends org.eclipse.jifa.common.Constant {
     String DEFAULT_FILENAME = "file";
 
     /**
-     * Default maximum file size limit (512MB) - matches Spring Boot's default
+     * Default maximum upload size limit - unlimited by default
      */
-    long DEFAULT_MAX_FILE_SIZE_BYTES = 512L * 1024L * 1024L;
+    long DEFAULT_MAX_UPLOAD_SIZE = Long.MAX_VALUE;
 }

@@ -13,7 +13,6 @@
 import {formatDate} from '@vueuse/core';
 import {ElNotification} from 'element-plus';
 import {h} from 'vue';
-import { useI18n } from 'vue-i18n';
 
 function nullOrUndefined(v: any) {
   return v === null || v === undefined;
@@ -21,6 +20,7 @@ function nullOrUndefined(v: any) {
 
 export function prettySize(size: number): string {
   if (nullOrUndefined(size)) return '';
+  if (size === Infinity) return ''; // No size limit
 
   if (size <= 1024) return size.toLocaleString() + ' B';
   let k = 1024;
