@@ -92,4 +92,9 @@ public interface Constant extends org.eclipse.jifa.common.Constant {
     String CONFIGURATION_PRIVATE_KEY = "private-key";
 
     String DEFAULT_FILENAME = "file";
+
+    /**
+     * Default maximum upload size limit - unlimited by default
+     */
+    long DEFAULT_MAX_UPLOAD_SIZE = Long.MAX_VALUE;
 }

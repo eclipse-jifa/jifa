@@ -20,6 +20,7 @@ function nullOrUndefined(v: any) {
 
 export function prettySize(size: number): string {
   if (nullOrUndefined(size)) return '';
+  if (size === Infinity) return ''; // No size limit
 
   if (size <= 1024) return size.toLocaleString() + ' B';
   let k = 1024;
@@ -86,6 +87,7 @@ export function showErrorNotification(errorCode: string, message: string) {
     return;
   }
   hasUnclosedError = true;
+  
   ElNotification.error({
     title: errorCode,
     message: h('p', { style: 'word-break: break-all' }, message),

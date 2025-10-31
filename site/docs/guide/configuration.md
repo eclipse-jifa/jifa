@@ -186,3 +186,30 @@ Local files to be analyzed, used only in `STANDALONE_WORKER` role.
 Type: Path[]
 
 Default: null
+
+## File Upload Configuration
+
+### spring.servlet.multipart.max-file-size
+
+Maximum file size allowed for file uploads.
+
+Type: DataSize (e.g., "512MB", "2GB")
+
+Default: 512MB
+
+### spring.servlet.multipart.max-request-size
+
+Maximum size allowed for multipart/form-data requests.
+
+Type: DataSize (e.g., "512MB", "2GB")
+
+Default: 512MB
+
+Example:
+```yaml
+spring:
+  servlet:
+    multipart:
+      max-file-size: 2GB
+      max-request-size: 2GB
+```

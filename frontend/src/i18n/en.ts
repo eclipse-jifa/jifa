@@ -107,6 +107,10 @@ export default {
       text: 'Text',
 
       dragOrClickToUpload: 'Drop file here or click to upload',
+      fileSizeLimit: 'File size limit: {size}',
+      fileSizeExceeded: 'File too large! File size {fileSize} exceeds limit {maxSize}',
+      uploadFailed: 'File upload failed',
+      fileCountLimit: 'Only one file can be uploaded',
 
       host: 'Host',
       user: 'User',
@@ -127,6 +131,8 @@ export default {
 
       waitingForResourceScheduling: 'Waiting for analysis resource scheduling',
     },
+
+
 
     heapDump,
     gclog,

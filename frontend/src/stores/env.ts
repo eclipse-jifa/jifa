@@ -37,6 +37,7 @@ export interface HandshakeResponse {
   oauth2LoginLinks: object;
   user?: User;
   disabledFileTransferMethods: [];
+  maxFileSize: number;
 }
 
 const tokenKey = 'jifa-token';
@@ -64,7 +65,8 @@ export const useEnv = defineStore('env', {
     publicKey: null as PublicKey | null,
     uploadHeader: {}, // used by upload
 
-    disabledFileTransferMethods: []
+    disabledFileTransferMethods: [],
+    maxFileSize: Infinity // Unlimited size by default
   }),
 
   getters: {
@@ -92,6 +94,8 @@ export const useEnv = defineStore('env', {
       this.allowRegistration = data.allowRegistration;
       this.oauth2LoginLinks = data.oauth2LoginLinks;
       this.publicKey = data.publicKey;
+      // Use the actual server configuration
+      this.maxFileSize = data.maxFileSize || Infinity;
       if (data.user) {
         this.user = data.user;
       } else if (!this.allowAnonymousAccess) {

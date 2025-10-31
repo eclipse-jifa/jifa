@@ -24,6 +24,7 @@ import { fileTypeMap } from '@/composables/file-types';
 import axios from 'axios';
 import { useEnv } from '@/stores/env';
 import { t } from '@/i18n/i18n';
+import { prettySize } from '@/support/utils';
 
 defineProps({
   visible: Boolean
@@ -33,8 +34,8 @@ const emit = defineEmits(['update:visible', 'transferCompletionCallback']);
 
 const env = useEnv();
 
-function _t(key: string) {
-  return t(`fileTransferForm.${key}`);
+function _t(key: string, args?: any) {
+  return t(`fileTransferForm.${key}`, args);
 }
 
 const paramTemplate = {
@@ -187,6 +188,11 @@ const transferId = ref(null);
 const percentage = ref(0);
 const progressStatus = ref({});
 const message = ref('');
+const fileList = ref([]);
+
+// Get file size limit from server configuration
+const maxFileSize = computed(() => env.maxFileSize);
+const maxFileSizeFormatted = computed(() => prettySize(maxFileSize.value));
 
 function resetStates() {
   processing.value = false;
@@ -194,6 +200,7 @@ function resetStates() {
   percentage.value = 0;
   progressStatus.value = {};
   message.value = '';
+  fileList.value = [];
 }
 
 watch(
@@ -212,8 +219,49 @@ function error(msg: string) {
 }
 
 function onUploadSuccess(fileId) {
+  fileList.value = [];
   emit('transferCompletionCallback', fileId);
 }
+
+// File upload validation
+function validateFileUpload(file) {
+  // Check file size against server limit
+  if (maxFileSize.value !== Infinity && file.size > maxFileSize.value) {
+    const fileSizeStr = prettySize(file.size);
+    error(_t('fileSizeExceeded', { 
+      fileSize: fileSizeStr, 
+      maxSize: maxFileSizeFormatted.value 
+    }));
+    return false;
+  }
+  
+  // Clear error message before upload
+  message.value = '';
+  return true;
+}
+
+// File upload error handling
+function onUploadError(error, file, fileList) {
+  console.error('Upload error:', error);
+  
+  // Default error message
+  let errorMessage = _t('uploadFailed');
+  
+  // Get error message from server response or fallback to default
+  if (error?.response?.data?.message) {
+    errorMessage = error.response.data.message;
+  }
+  
+  // Display the error message
+  error(errorMessage);
+}
+
+// File count exceed handling
+function onFileExceed(files, fileList) {
+  error(_t('fileCountLimit'));
+}
+
+
 
 function doTransfer() {
   resetStates();
@@ -370,18 +418,44 @@ const dialogWidth = computed(() => {
         <el-upload
           style="width: 420px"
           drag
-          :before-upload="validate"
+          :before-upload="validateFileUpload"
           method="post"
           action="/jifa-api/files/upload"
           :headers="env.uploadHeader"
           :data="{ type: params.type }"
           :on-success="onUploadSuccess"
+          :on-error="onUploadError"
+          :file-list="fileList"
+          :limit="1"
+          :on-exceed="onFileExceed"
         >
           <el-icon class="el-icon--upload">
             <UploadFilled />
           </el-icon>
           <div class="el-upload__text">{{ _t('dragOrClickToUpload') }}</div>
+          <template #tip>
+            <div class="el-upload__tip" v-if="maxFileSize !== Infinity">
+              {{ _t('fileSizeLimit', { size: maxFileSizeFormatted }) }}
+            </div>
+          </template>
         </el-upload>
+        
+        <!-- Upload error message - follows the upload component -->
+        <div
+          style="
+            margin-top: 8px;
+            width: 420px;
+            padding: 8px 16px;
+            border-radius: var(--el-border-radius-small);
+            font-size: 12px;
+            word-break: break-all;
+            background-color: var(--el-color-error-light-9);
+            color: var(--el-color-error);
+          "
+          v-if="message && byUpload"
+        >
+          {{ message }}
+        </div>
       </el-form-item>
       <!-- Upload items end-->
 
@@ -633,7 +707,7 @@ const dialogWidth = computed(() => {
         background-color: var(--el-color-error-light-9);
         color: var(--el-color-error);
       "
-      v-if="message"
+      v-if="message && !byUpload"
     >
       {{ message }}
     </div>

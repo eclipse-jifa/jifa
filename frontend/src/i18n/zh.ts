@@ -107,6 +107,10 @@ export default {
       text: '文本',
 
       dragOrClickToUpload: '拖拽文件至此处或点击进行上传',
+      fileSizeLimit: '文件大小限制：{size}',
+      fileSizeExceeded: '文件过大！文件大小 {fileSize} 超过限制 {maxSize}',
+      uploadFailed: '文件上传失败',
+      fileCountLimit: '只能上传一个文件',
 
       host: '主机',
       user: '用户',
@@ -127,6 +131,8 @@ export default {
 
       waitingForResourceScheduling: '分析资源调度中',
     },
+
+
 
     heapDump,
     gclog,

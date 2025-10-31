@@ -26,9 +26,17 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 public class ErrorUtil {
 
     public static byte[] toJson(Throwable throwable) {
+        return buildJsonBytes(getErrorCodeOf(throwable).name(), getMessage(throwable));
+    }
+
+    public static byte[] toJson(ErrorCode errorCode, String message) {
+        return buildJsonBytes(errorCode.name(), message);
+    }
+    
+    private static byte[] buildJsonBytes(String errorCode, String message) {
         JsonObject json = new JsonObject();
-        json.addProperty("errorCode", getErrorCodeOf(throwable).name());
-        json.addProperty("message", getMessage(throwable));
+        json.addProperty("errorCode", errorCode);
+        json.addProperty("message", message);
         return json.toString().getBytes(Constant.CHARSET);
     }
 

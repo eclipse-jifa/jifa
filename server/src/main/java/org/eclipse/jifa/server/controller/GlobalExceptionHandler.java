@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2023 Contributors to the Eclipse Foundation
+ * Copyright (c) 2023, 2025 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -15,16 +15,22 @@ package org.eclipse.jifa.server.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.eclipse.jifa.common.domain.exception.ErrorCodeAccessor;
 import org.eclipse.jifa.common.domain.exception.ValidationException;
 import org.eclipse.jifa.server.domain.exception.ElasticWorkerNotReadyException;
 import org.eclipse.jifa.server.enums.ServerErrorCode;
+import org.eclipse.jifa.server.Constant;
 import org.eclipse.jifa.server.util.ErrorUtil;
+import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
+import org.springframework.lang.Nullable;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.io.IOException;
@@ -34,18 +40,70 @@ import java.nio.file.AccessDeniedException;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    private final MultipartProperties multipartProperties;
+
+    public GlobalExceptionHandler(@Nullable MultipartProperties multipartProperties) {
+        this.multipartProperties = multipartProperties;
+    }
+
     @ExceptionHandler
     @ResponseBody
     public void handleHttpRequestException(Throwable throwable, HttpServletRequest request, HttpServletResponse response) throws IOException {
         log(throwable, request);
 
+        // Handle WebClient response exceptions
         if (throwable instanceof WebClientResponseException e) {
             response.setStatus(e.getStatusCode().value());
             response.getOutputStream().write(e.getResponseBodyAsByteArray());
             return;
         }
+        
+        // Handle file upload size exceeded exceptions
+        if (throwable instanceof MaxUploadSizeExceededException e) {
+            handleFileUploadSizeExceeded(e, response);
+            return;
+        }
+        
+        // Handle other exceptions
         response.setStatus(getStatusOf(throwable));
         response.getOutputStream().write(ErrorUtil.toJson(throwable));
+    }
+
+    /**
+     * Handle file upload size exceeded exceptions by reading actual configuration
+     * Uses the same logic as HandshakeController to ensure consistency
+     */
+    private void handleFileUploadSizeExceeded(MaxUploadSizeExceededException e, HttpServletResponse response) throws IOException {
+        // Use the same configuration logic as HandshakeController
+        long actualMaxSize;
+        if (multipartProperties != null) {
+            DataSize maxFileSize = multipartProperties.getMaxFileSize();
+            if (maxFileSize != null) {
+                actualMaxSize = maxFileSize.toBytes();
+            } else {
+                // This should rarely happen, but fallback to unlimited if DataSize is null
+                actualMaxSize = Constant.DEFAULT_MAX_UPLOAD_SIZE; // Long.MAX_VALUE (unlimited)
+            }
+        } else {
+            // This should rarely happen in a Spring Boot app, but fallback to unlimited
+            actualMaxSize = Constant.DEFAULT_MAX_UPLOAD_SIZE; // Long.MAX_VALUE (unlimited)
+        }
+        
+        String maxSizeFormatted;
+        if (actualMaxSize == Long.MAX_VALUE) {
+            maxSizeFormatted = "unlimited";
+        } else {
+            maxSizeFormatted = FileUtils.byteCountToDisplaySize(actualMaxSize);
+        }
+        
+        // Log for debugging - show both the exception's maxUploadSize (-1) and actual config
+        log.warn("File upload size exceeded. Exception.getMaxUploadSize(): {} (unreliable), Actual configured max-file-size: {} bytes ({})", 
+                 e.getMaxUploadSize(), actualMaxSize == Long.MAX_VALUE ? "unlimited" : actualMaxSize, maxSizeFormatted);
+        
+        response.setStatus(200); // Use 200 to simplify frontend handling
+        // Return clear error message with actual configured limit
+        String errorMessage = "File size exceeds the maximum allowed size of " + maxSizeFormatted;
+        response.getOutputStream().write(ErrorUtil.toJson(ServerErrorCode.FILE_TOO_LARGE, errorMessage));
     }
 
     private void log(Throwable throwable, HttpServletRequest request) {
@@ -78,4 +136,5 @@ public class GlobalExceptionHandler {
         }
         return 500;
     }
+
 }

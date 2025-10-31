@@ -8,6 +8,8 @@ gradle-app.setting
 
 .idea
 .vscode/
+.qoder/
+.cursor/
 **/node_modules/
 **/tmp/
 
