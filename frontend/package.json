@@ -23,7 +23,7 @@
     "js-base64": "^3.7.5",
     "js-cookie": "^3.0.5",
     "jsencrypt": "^3.3.2",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "mitt": "^3.0.1",
     "nprogress": "^0.2.0",
     "pinia": "^2.1.6",
