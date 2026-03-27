@@ -304,7 +304,7 @@ public class FileServiceImpl extends ConfigurationAccessor implements FileServic
 
     @Override
     public void deleteOldestFile() {
-        Optional<FileEntity> optional = fileRepo.findFirstByOrderByCreatedTimeDesc();
+        Optional<FileEntity> optional = fileRepo.findFirstByOrderByCreatedTimeAsc();
         if (optional.isPresent()) {
             FileEntity file = optional.get();
             doDelete(file);

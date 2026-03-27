@@ -29,5 +29,5 @@ public interface FileRepo extends CrudRepository<FileEntity, Long> {
 
     Optional<FileEntity> findByUniqueName(String uniqueName);
 
-    Optional<FileEntity> findFirstByOrderByCreatedTimeDesc();
+    Optional<FileEntity> findFirstByOrderByCreatedTimeAsc();
 }
