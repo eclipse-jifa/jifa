@@ -177,6 +177,18 @@ Default: false
 
 默认值: true
 
+## mcp-enabled
+
+是否启用实验性的 MCP 端点。
+
+类型：boolean
+
+默认值：false
+
+启用后，MCP 端点会以与现有 Jifa 应用相同的服务和端口对外暴露，路径为 `/jifa-api/mcp`。
+
+当前该端点只会在 `STANDALONE_WORKER` 和 `MASTER` 节点上启用。
+
 ## input-files
 
 本地的待分析文件，仅在 `STANDALONE_WORKER` 角色中使用。

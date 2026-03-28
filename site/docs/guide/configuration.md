@@ -179,6 +179,18 @@ Use this option if you intend to customize JIFA with an alternative authenticati
 
 Default: true
 
+## mcp-enabled
+
+Whether to enable the experimental MCP endpoint.
+
+Type: boolean
+
+Default: false
+
+When enabled, the MCP endpoint is exposed at `/jifa-api/mcp` on the same server and port as the existing Jifa application.
+
+This endpoint is only created on `STANDALONE_WORKER` and `MASTER` nodes.
+
 ## input-files
 
 Local files to be analyzed, used only in `STANDALONE_WORKER` role.

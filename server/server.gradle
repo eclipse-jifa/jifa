@@ -54,6 +54,9 @@ dependencies {
 
     implementation 'com.amazonaws:aws-java-sdk-s3:1.12.657'
 
+    implementation 'io.modelcontextprotocol.sdk:mcp-core:1.1.0'
+    implementation 'io.modelcontextprotocol.sdk:mcp-json-jackson2:1.1.0'
+
     // test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

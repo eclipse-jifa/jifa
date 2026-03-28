@@ -31,6 +31,8 @@ public interface Constant extends org.eclipse.jifa.common.Constant {
 
     String HTTP_LOGIN_MAPPING = "/login";
 
+    String HTTP_MCP_MAPPING = "/mcp";
+
     String HTTP_USER_MAPPING = "/user";
 
     String STOMP_ENDPOINT = "jifa-stomp";
