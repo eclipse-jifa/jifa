@@ -12,7 +12,7 @@
  ********************************************************************************/
 plugins {
     id 'application'
-    id "org.springframework.boot" version "3.3.11"
+    id "org.springframework.boot" version "4.1.0"
 }
 
 apply from: "$rootDir/gradle/java.gradle"
@@ -41,7 +41,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
-    implementation 'org.springframework.retry:spring-retry'
+    implementation 'org.springframework.retry:spring-retry:2.0.12'
 
     implementation 'io.kubernetes:client-java:20.0.0'
 
@@ -56,6 +56,7 @@ dependencies {
 
     // test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 }
 
 run.enabled = false

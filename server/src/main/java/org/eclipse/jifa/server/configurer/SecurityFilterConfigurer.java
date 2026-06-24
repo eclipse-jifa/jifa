@@ -22,7 +22,7 @@ import org.eclipse.jifa.server.filter.JwtTokenRefreshFilter;
 import org.eclipse.jifa.server.service.JwtService;
 import org.eclipse.jifa.server.service.UserService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties;
+import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

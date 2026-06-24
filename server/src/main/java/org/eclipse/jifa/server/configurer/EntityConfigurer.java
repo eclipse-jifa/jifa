@@ -13,7 +13,7 @@
 package org.eclipse.jifa.server.configurer;
 
 import org.eclipse.jifa.server.condition.Cluster;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration

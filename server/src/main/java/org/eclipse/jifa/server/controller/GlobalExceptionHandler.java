@@ -22,7 +22,7 @@ import org.eclipse.jifa.server.domain.exception.ElasticWorkerNotReadyException;
 import org.eclipse.jifa.server.enums.ServerErrorCode;
 import org.eclipse.jifa.server.Constant;
 import org.eclipse.jifa.server.util.ErrorUtil;
-import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
+import org.springframework.boot.servlet.autoconfigure.MultipartProperties;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.util.unit.DataSize;
@@ -57,13 +57,13 @@ public class GlobalExceptionHandler {
             response.getOutputStream().write(e.getResponseBodyAsByteArray());
             return;
         }
-        
+
         // Handle file upload size exceeded exceptions
         if (throwable instanceof MaxUploadSizeExceededException e) {
             handleFileUploadSizeExceeded(e, response);
             return;
         }
-        
+
         // Handle other exceptions
         response.setStatus(getStatusOf(throwable));
         response.getOutputStream().write(ErrorUtil.toJson(throwable));
@@ -88,18 +88,18 @@ public class GlobalExceptionHandler {
             // This should rarely happen in a Spring Boot app, but fallback to unlimited
             actualMaxSize = Constant.DEFAULT_MAX_UPLOAD_SIZE; // Long.MAX_VALUE (unlimited)
         }
-        
+
         String maxSizeFormatted;
         if (actualMaxSize == Long.MAX_VALUE) {
             maxSizeFormatted = "unlimited";
         } else {
             maxSizeFormatted = FileUtils.byteCountToDisplaySize(actualMaxSize);
         }
-        
+
         // Log for debugging - show both the exception's maxUploadSize (-1) and actual config
-        log.warn("File upload size exceeded. Exception.getMaxUploadSize(): {} (unreliable), Actual configured max-file-size: {} bytes ({})", 
+        log.warn("File upload size exceeded. Exception.getMaxUploadSize(): {} (unreliable), Actual configured max-file-size: {} bytes ({})",
                  e.getMaxUploadSize(), actualMaxSize == Long.MAX_VALUE ? "unlimited" : actualMaxSize, maxSizeFormatted);
-        
+
         response.setStatus(200); // Use 200 to simplify frontend handling
         // Return clear error message with actual configured limit
         String errorMessage = "File size exceeds the maximum allowed size of " + maxSizeFormatted;
