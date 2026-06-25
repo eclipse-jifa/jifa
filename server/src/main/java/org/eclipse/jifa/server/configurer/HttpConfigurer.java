@@ -17,7 +17,7 @@ import org.eclipse.jifa.server.ConfigurationAccessor;
 import org.eclipse.jifa.server.Constant;
 import org.eclipse.jifa.server.condition.ConditionalOnRole;
 import org.eclipse.jifa.server.enums.Role;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -80,7 +80,16 @@ public class HttpConfigurer extends ConfigurationAccessor implements WebMvcConfi
 
     @Override
     public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-        // add GsonHttpMessageConverter to the first position
-        converters.add(1, new GsonHttpMessageConverter(GsonHolder.GSON));
+        // Insert GsonHttpMessageConverter right after ByteArrayHttpMessageConverter so that Gson
+        // takes precedence over the String/Jackson converters for JSON (de)serialization, while
+        // @RequestBody byte[] is still read as raw bytes by ByteArrayHttpMessageConverter.
+        int index = Math.min(1, converters.size());
+        for (int i = 0; i < converters.size(); i++) {
+            if (converters.get(i) instanceof org.springframework.http.converter.ByteArrayHttpMessageConverter) {
+                index = i + 1;
+                break;
+            }
+        }
+        converters.add(index, new GsonHttpMessageConverter(GsonHolder.GSON));
     }
 }

@@ -13,7 +13,7 @@
 plugins {
     id 'base'
     id 'jacoco-report-aggregation'
-    id "org.springframework.boot" version "3.3.11"
+    id "org.springframework.boot" version "4.1.0"
 }
 
 apply from: "$rootDir/gradle/base.gradle"
@@ -34,7 +34,7 @@ dependencies {
 reporting {
     reports {
         testCodeCoverageReport(JacocoCoverageReport) {
-            testType = TestSuiteType.UNIT_TEST
+            testSuiteName = "test"
         }
     }
 }

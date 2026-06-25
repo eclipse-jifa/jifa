@@ -20,8 +20,8 @@ import org.eclipse.jifa.server.domain.dto.User;
 import org.eclipse.jifa.server.domain.entity.shared.user.UserEntity;
 import org.eclipse.jifa.server.service.CipherService;
 import org.eclipse.jifa.server.service.UserService;
-import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties;
-import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
+import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientProperties;
+import org.springframework.boot.servlet.autoconfigure.MultipartProperties;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.util.unit.DataSize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -67,7 +67,7 @@ public class HandshakeController extends ConfigurationAccessor {
     public HandshakeResponse handshake() {
         UserEntity userEntity = userService.getCurrentUser();
         User user = userEntity == null ? null : new User(userEntity.getName(), userEntity.isAdmin());
-        
+
         // Get upload size limit configuration
         long maxUploadSize;
         if (multipartProperties != null) {
@@ -76,7 +76,7 @@ public class HandshakeController extends ConfigurationAccessor {
         } else {
             maxUploadSize = Constant.DEFAULT_MAX_UPLOAD_SIZE;
         }
-        
+
         return new HandshakeResponse(getRole(),
                                      config.isAllowLogin(),
                                      config.isAllowLogin() ? oauth2LoginLinks : Collections.emptyMap(),
