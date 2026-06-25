@@ -102,7 +102,7 @@ function renderContent(hit: SearchHit): string {
   let content = '';
   // skip line 0 (thread header – already shown as card title)
   hit.lines.slice(1).forEach((line) => {
-    let modified = line.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '\n';
+    let modified = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '\n';
     patterns.forEach((p) => {
       modified = modified.replaceAll(p, '<span class="search-hit">$1</span>');
     });
