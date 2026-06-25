@@ -416,14 +416,15 @@ public class ThreadDumpAnalyzer {
     public List<VThread> cpuConsumingThreadsCompare(ThreadDumpAnalyzer other, int max,
                                                      @ApiParameterMeta(required = false) ThreadType type) {
         int limit = max < 0 ? Integer.MAX_VALUE : max;
+        Map<Long, Thread> otherByTid = other.snapshot.getThreadMap().values().stream()
+            .collect(Collectors.toMap(Thread::getTid, t -> t, (a, b) -> a));
+ 
         Map<Thread, Double> cpuDelta = new HashMap<>();
         for (Thread first : snapshot.getThreadMap().values()) {
             if (type != null && first.getType() != type) {
                 continue;
             }
-            Thread second = other.snapshot.getThreadMap().values().stream()
-                    .filter(t -> t.getTid() == first.getTid())
-                    .findFirst().orElse(null);
+            Thread second = otherByTid.get(first.getTid());
             if (second != null && second.getCpu() > 0) {
                 cpuDelta.put(first, second.getCpu() - first.getCpu());
             }
@@ -487,9 +488,14 @@ public class ThreadDumpAnalyzer {
         boolean doRegex       = Boolean.TRUE.equals(regex);
         int     flags         = Boolean.TRUE.equals(matchCase) ? 0 : Pattern.CASE_INSENSITIVE;
 
-        List<Pattern> patterns = term.stream()
-                .map(t -> Pattern.compile(doRegex ? t : Pattern.quote(t), flags))
-                .collect(Collectors.toList());
+        List<Pattern> patterns = new ArrayList<>();
+        for (String t : term) {
+            try {
+                patterns.add(Pattern.compile(doRegex ? t : Pattern.quote(t), flags));
+            } catch (java.util.regex.PatternSyntaxException e) {
+                throw new IllegalArgumentException("Invalid regex term: " + t, e);
+            }
+        }
 
         List<SearchHit> results = new ArrayList<>();
 
