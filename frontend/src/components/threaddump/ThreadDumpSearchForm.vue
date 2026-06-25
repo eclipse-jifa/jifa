@@ -59,7 +59,7 @@ const formRef = ref();
 
 const rules = {
   term: [
-    { required: true, message: 'Please enter a search term', trigger: 'blur' },
+    { required: true, message: () => tdt('threadDumpSearch.requiredMessage'), trigger: 'blur' },
     {
       validator: (_rule: any, value: string, callback: (err?: Error) => void) => {
         if (search.regex && value) {

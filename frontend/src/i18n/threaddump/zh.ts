@@ -95,6 +95,7 @@ export default {
     label: "搜索线程",
     searchTitle: "搜索线程",
     searchInput: "搜索词",
+    requiredMessage: "请输入搜索词",
     advancedToggle: "高级",
     searchFields: "搜索字段",
     searchFieldName: "线程名称",

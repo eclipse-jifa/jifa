@@ -104,6 +104,7 @@ export default {
     label: "Search Threads",
     searchTitle: "Search Threads",
     searchInput: "Search term",
+    requiredMessage: "Please enter a search term",
     advancedToggle: "Advanced",
     searchFields: "Search Fields",
     searchFieldName: "Thread Name",
