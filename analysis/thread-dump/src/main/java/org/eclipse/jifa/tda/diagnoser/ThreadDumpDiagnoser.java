@@ -90,10 +90,13 @@ public class ThreadDumpDiagnoser {
 
     private void analyzeBlockedThreads(Snapshot snapshot, ThreadDumpAnalysisConfig config,
                                         List<Diagnostic> results) {
+        if (config.getHighBlockedThreadsThreshold() <= 0) {
+            return;
+        }
         List<JavaThread> blockedThreads = snapshot.getJavaThreads().stream()
                 .filter(t -> t.getJavaThreadState() == JavaThreadState.BLOCKED_ON_MONITOR_ENTER)
                 .collect(Collectors.toList());
-        if (blockedThreads.size() > config.getHighBlockedThreadsThreshold()) {
+        if (blockedThreads.size() >= config.getHighBlockedThreadsThreshold()) {
             results.add(new Diagnostic(Severity.ERROR, Diagnostic.Type.HIGH_BLOCKED_THREAD_COUNT,
                     createParams(blockedThreads), toVThread(blockedThreads)));
         }
