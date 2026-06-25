@@ -78,11 +78,26 @@ public class Converter {
         String clean = s.trim();
         try {
             return Double.parseDouble(clean);
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException ignore) {
+            // fall through
+        }
+        try {
+            java.text.ParsePosition pos = new java.text.ParsePosition(0);
+            Number n = NumberFormat.getInstance(Locale.US).parse(clean, pos);
+            if (n != null && pos.getIndex() == clean.length()) {
+                return n.doubleValue();
+            }
+            throw new ParseException("Unparseable number: \"" + clean + "\"", pos.getErrorIndex());
+        } catch (ParseException usEx) {
             try {
-                return NumberFormat.getInstance(Locale.GERMANY).parse(clean).doubleValue();
-            } catch (ParseException pe) {
-                throw new IllegalArgumentException("Cannot parse '" + s + "' as a number", pe);
+                java.text.ParsePosition pos = new java.text.ParsePosition(0);
+                Number n = NumberFormat.getInstance(Locale.GERMANY).parse(clean, pos);
+                if (n != null && pos.getIndex() == clean.length()) {
+                    return n.doubleValue();
+                }
+                throw new ParseException("Unparseable number: \"" + clean + "\"", pos.getErrorIndex());
+            } catch (ParseException deEx) {
+                throw new IllegalArgumentException("Cannot parse '" + s + "' as a number", deEx);
             }
         }
     }
