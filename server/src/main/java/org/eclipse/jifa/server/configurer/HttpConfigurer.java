@@ -83,9 +83,9 @@ public class HttpConfigurer extends ConfigurationAccessor implements WebMvcConfi
         // Insert GsonHttpMessageConverter right after ByteArrayHttpMessageConverter so that Gson
         // takes precedence over the String/Jackson converters for JSON (de)serialization, while
         // @RequestBody byte[] is still read as raw bytes by ByteArrayHttpMessageConverter.
-        int index = 0;
+        int index = Math.min(1, converters.size());
         for (int i = 0; i < converters.size(); i++) {
-            if (converters.get(i).getClass().getSimpleName().equals("ByteArrayHttpMessageConverter")) {
+            if (converters.get(i) instanceof org.springframework.http.converter.ByteArrayHttpMessageConverter) {
                 index = i + 1;
                 break;
             }
