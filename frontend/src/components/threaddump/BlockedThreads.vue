@@ -161,6 +161,12 @@ onMounted(() => {
     drawTrees();
   });
 });
+
+// Reset the ref array before each update so stale SVG refs from removed
+// list items do not linger (Vue 3 recommended pattern for function refs in v-for).
+onBeforeUpdate(() => {
+  svgRefs.value = [];
+});
 </script>
 
 <template>
