@@ -20,6 +20,7 @@ import * as d3 from 'd3';
 import { useAnalysisApiRequester } from '@/composables/analysis-api-requester';
 import { tdt } from '@/i18n/i18n';
 import { useI18n } from 'vue-i18n';
+import { isDark } from '@/composables/theme';
 import Thread from '@/components/threaddump/Thread.vue';
 
 const { request } = useAnalysisApiRequester();
@@ -64,6 +65,11 @@ function openThread(id: number) {
 }
 
 function renderTree(svgEl: SVGSVGElement, root: TreeNode) {
+  const dark = isDark.value;
+  const textColor = dark ? '#e0e0e0' : '#303133';
+  const linkColor = dark ? '#555' : '#ccc';
+  const linkHoverColor = dark ? '#aaa' : '#333';
+
   const margin = { top: 0, right: 0, bottom: 0, left: 40 };
   const neededHeight = Math.max(60, root.children!.length * 25);
   const width = 660 - margin.left - margin.right;
@@ -127,9 +133,15 @@ function renderTree(svgEl: SVGSVGElement, root: TreeNode) {
     .attr('y', 0)
     .style('text-anchor', 'start')
     .style('font', '13px sans-serif')
+    .style('fill', textColor)
     .style('cursor', 'pointer')
     .text((d) => (d.data as TreeNode).name)
     .on('click', (_e, d) => openThread((d.data as TreeNode).id));
+
+  // Apply dynamic link colors via inline styles so dark/light mode is respected.
+  svg.selectAll<SVGPathElement, unknown>('.link')
+    .style('stroke', linkColor);
+  svgEl.style.setProperty('--link-hover-color', linkHoverColor);
 }
 
 function buildTree(bt: VBlockingThread): TreeNode {
@@ -171,6 +183,9 @@ onMounted(() => {
 onBeforeUpdate(() => {
   svgRefs.value = [];
 });
+
+// Re-draw when the user switches between light and dark mode.
+watch(isDark, () => drawTrees());
 </script>
 
 <template>
@@ -206,11 +221,10 @@ onBeforeUpdate(() => {
 <style scoped>
 :deep(.link) {
   fill: none;
-  stroke: #ccc;
   stroke-width: 1px;
 }
 :deep(.link:hover) {
-  stroke: #333;
+  stroke: var(--link-hover-color, #333);
   stroke-width: 2px;
 }
 :deep(.node circle) {
