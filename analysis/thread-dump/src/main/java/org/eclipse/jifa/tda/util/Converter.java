@@ -15,6 +15,7 @@ package org.eclipse.jifa.tda.util;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.text.ParsePosition;
 import java.util.Locale;
 
 public class Converter {
@@ -82,7 +83,7 @@ public class Converter {
             // fall through
         }
         try {
-            java.text.ParsePosition pos = new java.text.ParsePosition(0);
+            ParsePosition pos = new ParsePosition(0);
             Number n = NumberFormat.getInstance(Locale.US).parse(clean, pos);
             if (n != null && pos.getIndex() == clean.length()) {
                 return n.doubleValue();
@@ -90,7 +91,7 @@ public class Converter {
             throw new ParseException("Unparseable number: \"" + clean + "\"", pos.getErrorIndex());
         } catch (ParseException usEx) {
             try {
-                java.text.ParsePosition pos = new java.text.ParsePosition(0);
+                ParsePosition pos = new ParsePosition(0);
                 Number n = NumberFormat.getInstance(Locale.GERMANY).parse(clean, pos);
                 if (n != null && pos.getIndex() == clean.length()) {
                     return n.doubleValue();
