@@ -52,7 +52,7 @@ const threadDialogVisible = ref(false);
 const selectedIds = ref<number[]>([]);
 
 function blockedTitle(bt: VBlockingThread): string {
-  return t('jifa.threadDump.blockedThreads.title', bt.blockedThreads.length, {
+  return t('jifa.threadDump.blockedThreads.title', {
     blocker: bt.blockingThread.name,
     count: bt.blockedThreads.length
   });
