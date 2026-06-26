@@ -16,6 +16,7 @@
     Assisted-by: GitHub Copilot (Claude Sonnet 4.5)
  -->
 <script setup lang="ts">
+import { CircleCheckFilled, CircleCloseFilled, InfoFilled, WarningFilled } from '@element-plus/icons-vue';
 import { useAnalysisApiRequester } from '@/composables/analysis-api-requester';
 import { tdt } from '@/i18n/i18n';
 import { useI18n } from 'vue-i18n';
@@ -49,6 +50,7 @@ function loadData() {
     } else {
       diagnostics.value = data;
     }
+  }).finally(() => {
     loading.value = false;
   });
 }
@@ -58,13 +60,6 @@ function severityColor(severity: string): string {
   if (severity === 'WARNING') return 'color: #E6A23C';
   if (severity === 'OK')      return 'color: #67C23A';
   return 'color: #909399';
-}
-
-function severityIcon(severity: string): string {
-  if (severity === 'ERROR')   return 'el-icon-error';
-  if (severity === 'WARNING') return 'el-icon-warning';
-  if (severity === 'OK')      return 'el-icon-success';
-  return 'el-icon-info';
 }
 
 function messageText(row: DiagnosticEntry): string {
@@ -101,11 +96,12 @@ onMounted(() => {
       <!-- Message column -->
       <el-table-column :label="tdt('diagnosis.messageColumn')" min-width="280">
         <template #default="{ row }">
-          <i
-            :style="severityColor(row.severity)"
-            :class="severityIcon(row.severity)"
-            :title="row.severity"
-          />
+          <el-icon :style="severityColor(row.severity)" :title="row.severity">
+            <CircleCloseFilled v-if="row.severity === 'ERROR'" />
+            <WarningFilled v-else-if="row.severity === 'WARNING'" />
+            <CircleCheckFilled v-else-if="row.severity === 'OK'" />
+            <InfoFilled v-else />
+          </el-icon>
           <span style="margin-left: 10px">{{ messageText(row) }}</span>
         </template>
       </el-table-column>
