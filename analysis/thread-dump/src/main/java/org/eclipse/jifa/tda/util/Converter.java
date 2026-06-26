@@ -65,11 +65,11 @@ public class Converter {
      *            {@code "1.234,56"} → {@code 1234.56}).</li>
      * </ol>
      * <p>
-     * This two-step approach avoids the ambiguity of position-based heuristics.
-     * A string such as {@code "1,234"} (single comma only) is unambiguously
-     * handled: standard parsing fails, German-locale parsing interprets the comma
-     * as a decimal separator, yielding {@code 1.234} – the semantically correct
-     * value for a time produced by a JVM running in a German locale.
+     * {@code Double.parseDouble} already covers all standard (dot-decimal) formats,
+     * so the German-locale fallback is used only when that first step fails.
+     * Note: a Locale.US {@code NumberFormat} is intentionally <em>not</em> used as
+     * an intermediate step because it treats a comma as a thousands separator and
+     * would mis-parse {@code "1,5"} as {@code 15.0}.
      *
      * @param s the numeric string to parse; leading/trailing whitespace is trimmed
      * @return the parsed {@code double} value
@@ -80,26 +80,17 @@ public class Converter {
         try {
             return Double.parseDouble(clean);
         } catch (NumberFormatException ignore) {
-            // fall through
+            // fall through to locale-aware parsing
         }
         try {
             ParsePosition pos = new ParsePosition(0);
-            Number n = NumberFormat.getInstance(Locale.US).parse(clean, pos);
+            Number n = NumberFormat.getInstance(Locale.GERMANY).parse(clean, pos);
             if (n != null && pos.getIndex() == clean.length()) {
                 return n.doubleValue();
             }
             throw new ParseException("Unparseable number: \"" + clean + "\"", pos.getErrorIndex());
-        } catch (ParseException usEx) {
-            try {
-                ParsePosition pos = new ParsePosition(0);
-                Number n = NumberFormat.getInstance(Locale.GERMANY).parse(clean, pos);
-                if (n != null && pos.getIndex() == clean.length()) {
-                    return n.doubleValue();
-                }
-                throw new ParseException("Unparseable number: \"" + clean + "\"", pos.getErrorIndex());
-            } catch (ParseException deEx) {
-                throw new IllegalArgumentException("Cannot parse '" + s + "' as a number", deEx);
-            }
+        } catch (ParseException ex) {
+            throw new IllegalArgumentException("Cannot parse '" + s + "' as a number", ex);
         }
     }
 }
