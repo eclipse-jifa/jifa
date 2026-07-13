@@ -21,34 +21,9 @@ import { useAnalysisApiRequester } from '@/composables/analysis-api-requester';
 import ThreadDumpSearchForm from './ThreadDumpSearchForm.vue';
 import type { SearchModel } from './ThreadDumpSearchForm.vue';
 import Thread from './Thread.vue';
+import { stateColor } from '@/components/threaddump/thread-state-colors';
 
 const { request } = useAnalysisApiRequester();
-
-const STATE_COLORS: Record<string, string> = {
-  // JavaThreadState enum names (backend serialization)
-  RUNNABLE:                '#67c23a',   // green
-  SLEEPING:                '#e6a23c',   // orange
-  IN_OBJECT_WAIT:          '#409eff',   // blue
-  IN_OBJECT_WAIT_TIMED:    '#79bbff',   // light blue
-  PARKED:                  '#a855f7',   // purple
-  PARKED_TIMED:            '#7c3aed',   // dark purple
-  BLOCKED_ON_MONITOR_ENTER:'#f56c6c',   // red
-  NEW:                     '#95d475',   // light green
-  TERMINATED:              '#909399',   // gray
-  // OSTreadState enum names
-  MONITOR_WAIT:            '#f56c6c',   // red
-  COND_VAR_WAIT:           '#5c8ee6',   // steel blue
-  OBJECT_WAIT:             '#3b82f6',   // blue
-  BREAK_POINTED:           '#f0c419',   // yellow
-  ALLOCATED:               '#95d475',   // light green
-  INITIALIZED:             '#67c23a',   // green
-  ZOMBIE:                  '#606266',   // dark gray
-  UNKNOWN:                 '#606266',   // dark gray
-};
-
-function stateColor(state: string) {
-  return STATE_COLORS[state] ?? '#8892a4';
-}
 
 interface SearchHit {
   id: number;
