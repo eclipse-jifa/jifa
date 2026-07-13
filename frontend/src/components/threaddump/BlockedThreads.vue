@@ -70,7 +70,7 @@ function renderTree(svgEl: SVGSVGElement, root: TreeNode) {
   const linkColor = dark ? '#555' : '#ccc';
   const linkHoverColor = dark ? '#aaa' : '#333';
 
-  const margin = { top: 0, right: 0, bottom: 0, left: 40 };
+  const margin = { top: 10, right: 160, bottom: 10, left: 200 };
   const neededHeight = Math.max(60, root.children!.length * 25);
   const width = 660 - margin.left - margin.right;
   const height = neededHeight - margin.top - margin.bottom;
@@ -131,9 +131,11 @@ function renderTree(svgEl: SVGSVGElement, root: TreeNode) {
     .attr('dy', '.35em')
     .attr('x', 15)
     .attr('y', 0)
-    .style('text-anchor', 'start')
-    .style('font', '13px sans-serif')
-    .style('fill', textColor)
+    .style('text-anchor', (d: any) => (d.children ? 'end' : 'start'))
+    .style('font-size', '13px')
+    .style('font-family', 'sans-serif')
+    .style('fill', (d: any) => (d.children ? '#F56C6C' : textColor))
+    .style('font-weight', (d: any) => (d.children ? '600' : 'normal'))
     .style('cursor', 'pointer')
     .text((d) => (d.data as TreeNode).name)
     .on('click', (_e, d) => openThread((d.data as TreeNode).id));

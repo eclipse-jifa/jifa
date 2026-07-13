@@ -135,13 +135,25 @@ function resize() {
 
 watch(isDark, () => renderAllCharts());
 
+// Track which panels are open so we can render charts when a panel is opened
+const activeNames = ref<string[]>(['java', 'non-java']);
+
+function onCollapseChange(val: string | number | (string | number)[]) {
+  const arr = (Array.isArray(val) ? val : [val]).map(String);
+  activeNames.value = arr;
+  nextTick(() => {
+    if (arr.includes('java')) renderJavaChart();
+    if (arr.includes('non-java')) renderNonJavaChart();
+  });
+}
+
 onMounted(async () => {
   window.addEventListener('resize', resize);
   loading.value = true;
   try {
     const [java, all] = await Promise.all([
       request('cpuConsumingThreads', { max: 10, type: 'JAVA' }),
-      request('cpuConsumingThreads', { max: 10, type: 'NON_JAVA' })
+      request('cpuConsumingThreads', { max: 10 })
     ]);
     const javaList: CpuThread[] = java ?? [];
     const allList: CpuThread[] = all ?? [];
@@ -164,7 +176,7 @@ onUnmounted(() => {
 
 <template>
   <div v-loading="loading">
-    <el-collapse>
+    <el-collapse :model-value="activeNames" @change="onCollapseChange">
       <!-- Java Threads -->
       <el-collapse-item :title="tdt('cpuConsumingThreads.javaThreads')" name="java">
         <div
