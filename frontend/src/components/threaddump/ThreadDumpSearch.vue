@@ -104,7 +104,7 @@ function renderContent(hit: SearchHit): string {
   hit.lines.slice(1).forEach((line) => {
     let modified = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '\n';
     patterns.forEach((p) => {
-      modified = modified.replaceAll(p, '<span class="search-hit">$1</span>');
+      modified = modified.replace(p, '<span class="search-hit">$1</span>');
     });
     content += modified;
   });
