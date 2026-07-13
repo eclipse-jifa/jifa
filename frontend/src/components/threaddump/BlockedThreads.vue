@@ -199,18 +199,18 @@ watch(isDark, () => drawTrees());
     <div
       v-for="(bt, idx) in blockingThreads"
       :key="idx"
-      style="margin-bottom: 24px"
+      style="margin-bottom: 24px; overflow-x: auto"
     >
-      <p style="margin: 0 0 6px; font-weight: 500; color: #F56C6C">
+      <p style="margin: 0 0 6px; font-weight: 500; color: var(--el-color-danger)">
         ⚠ {{ blockedTitle(bt) }}
-        <span v-if="bt.heldLock" style="font-weight: normal; color: #909399; font-size: 12px">
+        <span v-if="bt.heldLock" style="font-weight: normal; color: var(--el-text-color-secondary); font-size: var(--el-font-size-small)">
           — locked {{ bt.heldLock.class }}
         </span>
       </p>
       <svg
         :ref="(el) => { if (el) svgRefs[idx] = el as SVGSVGElement }"
         :key="'svg-' + idx"
-        style="overflow: visible"
+        style="overflow: visible; display: block; margin: 0 auto"
       />
     </div>
 

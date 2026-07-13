@@ -151,7 +151,9 @@ async function doSearch(model: SearchModel) {
 
 <template>
   <div>
-    <ThreadDumpSearchForm @submit="doSearch" />
+    <div style="margin-bottom: 16px">
+      <ThreadDumpSearchForm @submit="doSearch" />
+    </div>
 
     <div v-loading="loading" style="min-height: 40px">
       <template v-if="searched && !loading">
@@ -215,18 +217,18 @@ async function doSearch(model: SearchModel) {
 .thread-content {
   margin: 0;
   padding: 10px;
-  background-color: #1e1e2e;
-  color: #cdd6f4;
+  background-color: var(--el-fill-color-darker);
+  color: var(--el-text-color-primary);
   overflow: auto;
   white-space: pre;
-  font-size: 0.75rem;
-  font-family: monospace;
-  border-radius: 4px;
+  font-size: var(--el-font-size-small);
+  font-family: var(--el-font-family);
+  border-radius: var(--el-border-radius-base);
 }
 
 :deep(.search-hit) {
-  color: #ff0000;
-  background-color: #ffffff;
+  color: var(--el-color-danger);
+  background-color: var(--el-color-danger-light-9);
   font-weight: bold;
 }
 </style>

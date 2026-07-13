@@ -133,9 +133,5 @@ onMounted(() => {
 <style scoped>
 :deep(.el-table .cell) {
   word-break: break-word !important;
-  font-size: larger;
-}
-:deep(.el-table .el-button) {
-  font-size: medium;
 }
 </style>
