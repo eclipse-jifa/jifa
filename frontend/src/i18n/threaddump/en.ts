@@ -52,6 +52,8 @@ export default {
     minutes: "minutes",
     seconds: "seconds",
     milliseconds: "ms",
+    javaThreads: "Java Threads",
+    nonJavaThreads: "Non-Java Threads",
   },
 
   // ----- Diagnosis -----

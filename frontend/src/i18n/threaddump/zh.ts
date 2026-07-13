@@ -51,6 +51,8 @@ export default {
     minutes: "分钟",
     seconds: "秒",
     milliseconds: "毫秒",
+    javaThreads: "Java 线程",
+    nonJavaThreads: "非 Java 线程",
   },
 
   // ----- 诊断 -----

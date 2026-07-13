@@ -32,7 +32,9 @@ interface CpuThread {
   cpu: number | null;
 }
 
-const threads = ref<CpuThread[]>([]);
+const javaThreads = ref<CpuThread[]>([]);
+const nonJavaThreads = ref<CpuThread[]>([]);
+
 const threadDialogVisible = ref(false);
 const selectedThreadId = ref<number | null>(null);
 
@@ -41,10 +43,13 @@ const COLOR_PALETTE = [
   '#f95d6a', '#ff7c43', '#ffa600', '#488f31', '#8aa1b4'
 ];
 
-const chartRef = ref<HTMLElement | null>(null);
-let chartInstance: echarts.ECharts | null = null;
+const javaChartRef = ref<HTMLElement | null>(null);
+const nonJavaChartRef = ref<HTMLElement | null>(null);
+let javaChartInstance: echarts.ECharts | null = null;
+let nonJavaChartInstance: echarts.ECharts | null = null;
 
-const chartHeight = computed(() => Math.max(180, threads.value.length * 40));
+const javaChartHeight = computed(() => Math.max(180, javaThreads.value.length * 40));
+const nonJavaChartHeight = computed(() => Math.max(180, nonJavaThreads.value.length * 40));
 
 function truncate(str: string, n: number): string {
   return str.length > n ? str.slice(0, n - 1) + '…' : str;
@@ -55,84 +60,131 @@ function openThread(id: number) {
   threadDialogVisible.value = true;
 }
 
-function render() {
-  if (!chartRef.value || threads.value.length === 0) return;
-  chartInstance?.dispose();
-  chartInstance = echarts.init(chartRef.value, isDark.value ? 'dark' : null);
-
-  const maxMs = threads.value.reduce((m, t) => Math.max(m, t.cpu ?? 0), 0);
+function buildChartOption(threads: CpuThread[]) {
+  const maxMs = threads.reduce((m, t) => Math.max(m, t.cpu ?? 0), 0);
   const unitKey = maxMs >= 3_600_000 ? 'hours' : maxMs >= 60_000 ? 'minutes' : maxMs >= 1_000 ? 'seconds' : 'milliseconds';
   const div = unitKey === 'hours' ? 3_600_000 : unitKey === 'minutes' ? 60_000 : unitKey === 'seconds' ? 1_000 : 1;
   const unitLabel = tdt('cpuConsumingThreads.' + unitKey);
+  const names = threads.map(t => truncate(t.name, 35));
+  const values = threads.map(t => parseFloat(((t.cpu ?? 0) / div).toFixed(3)));
+  return {
+    unitLabel,
+    option: {
+      color: COLOR_PALETTE,
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        formatter: (params: any) => `${params[0].name}<br/>${params[0].value} ${unitLabel}`
+      },
+      grid: { left: 220, right: 20, top: 10, bottom: 40 },
+      xAxis: {
+        type: 'value',
+        name: `${tdt('cpuConsumingThreads.cpuConsumptionLabel')} (${unitLabel})`
+      },
+      yAxis: {
+        type: 'category',
+        data: names,
+        inverse: true,
+        axisLabel: { fontSize: 11, width: 200, overflow: 'truncate' }
+      },
+      series: [{
+        type: 'bar',
+        cursor: 'pointer',
+        data: values.map((v, i) => ({
+          value: v,
+          itemStyle: { color: COLOR_PALETTE[i % COLOR_PALETTE.length] }
+        }))
+      }]
+    }
+  };
+}
 
-  const names = threads.value.map(t => truncate(t.name, 35));
-  const values = threads.value.map(t => parseFloat(((t.cpu ?? 0) / div).toFixed(3)));
-
-  chartInstance.setOption({
-    color: COLOR_PALETTE,
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' },
-      formatter: (params: any) => `${params[0].name}<br/>${params[0].value} ${unitLabel}`
-    },
-    grid: { left: 220, right: 20, top: 10, bottom: 40 },
-    xAxis: {
-      type: 'value',
-      name: `${tdt('cpuConsumingThreads.cpuConsumptionLabel')} (${unitLabel})`
-    },
-    yAxis: {
-      type: 'category',
-      data: names,
-      inverse: true,
-      axisLabel: { fontSize: 11, width: 200, overflow: 'truncate' }
-    },
-    series: [{
-      type: 'bar',
-      cursor: 'pointer',
-      data: values.map((v, i) => ({
-        value: v,
-        itemStyle: { color: COLOR_PALETTE[i % COLOR_PALETTE.length] }
-      }))
-    }]
-  });
-
-  chartInstance.on('click', (params: any) => {
-    const thread = threads.value[params.dataIndex];
+function renderJavaChart() {
+  if (!javaChartRef.value || javaThreads.value.length === 0) return;
+  javaChartInstance?.dispose();
+  javaChartInstance = echarts.init(javaChartRef.value, isDark.value ? 'dark' : null);
+  const { option } = buildChartOption(javaThreads.value);
+  javaChartInstance.setOption(option);
+  javaChartInstance.on('click', (params: any) => {
+    const thread = javaThreads.value[params.dataIndex];
     if (thread) openThread(thread.id);
   });
 }
 
-function resize() {
-  chartInstance?.resize();
+function renderNonJavaChart() {
+  if (!nonJavaChartRef.value || nonJavaThreads.value.length === 0) return;
+  nonJavaChartInstance?.dispose();
+  nonJavaChartInstance = echarts.init(nonJavaChartRef.value, isDark.value ? 'dark' : null);
+  const { option } = buildChartOption(nonJavaThreads.value);
+  nonJavaChartInstance.setOption(option);
+  nonJavaChartInstance.on('click', (params: any) => {
+    const thread = nonJavaThreads.value[params.dataIndex];
+    if (thread) openThread(thread.id);
+  });
 }
 
-watch(isDark, () => render());
+function renderAllCharts() {
+  renderJavaChart();
+  renderNonJavaChart();
+}
 
-onMounted(() => {
+function resize() {
+  javaChartInstance?.resize();
+  nonJavaChartInstance?.resize();
+}
+
+watch(isDark, () => renderAllCharts());
+
+onMounted(async () => {
   window.addEventListener('resize', resize);
   loading.value = true;
-  request('cpuConsumingThreads', { max: 10 }).then((data: CpuThread[]) => {
-    threads.value = data ?? [];
+  try {
+    const [java, all] = await Promise.all([
+      request('cpuConsumingThreads', { max: 10, type: 'JAVA' }),
+      request('cpuConsumingThreads', { max: 10, type: 'NON_JAVA' })
+    ]);
+    const javaList: CpuThread[] = java ?? [];
+    const allList: CpuThread[] = all ?? [];
+    const javaIds = new Set(javaList.map((t: CpuThread) => t.id));
+    javaThreads.value = javaList;
+    nonJavaThreads.value = allList.filter((t: CpuThread) => !javaIds.has(t.id));
+    await nextTick();
+    renderAllCharts();
+  } finally {
     loading.value = false;
-    nextTick(() => render());
-  });
+  }
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', resize);
-  chartInstance?.dispose();
+  javaChartInstance?.dispose();
+  nonJavaChartInstance?.dispose();
 });
 </script>
 
 <template>
   <div v-loading="loading">
-    <p style="margin: 0 0 8px; font-weight: 500">{{ tdt('cpuConsumingThreads.title') }}</p>
-    <div
-      v-if="threads.length > 0"
-      ref="chartRef"
-      :style="{ height: `${chartHeight}px`, cursor: 'pointer' }"
-    />
-    <el-empty v-if="!loading && threads.length === 0" :description="'-'" />
+    <el-collapse>
+      <!-- Java Threads -->
+      <el-collapse-item :title="tdt('cpuConsumingThreads.javaThreads')" name="java">
+        <div
+          v-if="javaThreads.length > 0"
+          ref="javaChartRef"
+          :style="{ height: `${javaChartHeight}px`, cursor: 'pointer' }"
+        />
+        <el-empty v-else-if="!loading" :description="'-'" />
+      </el-collapse-item>
+
+      <!-- Non-Java Threads -->
+      <el-collapse-item :title="tdt('cpuConsumingThreads.nonJavaThreads')" name="non-java">
+        <div
+          v-if="nonJavaThreads.length > 0"
+          ref="nonJavaChartRef"
+          :style="{ height: `${nonJavaChartHeight}px`, cursor: 'pointer' }"
+        />
+        <el-empty v-else-if="!loading" :description="'-'" />
+      </el-collapse-item>
+    </el-collapse>
 
     <el-dialog v-model="threadDialogVisible" width="80%" destroy-on-close>
       <Thread :ids="selectedThreadId != null ? [selectedThreadId] : []" />
