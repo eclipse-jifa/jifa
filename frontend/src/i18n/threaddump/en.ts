@@ -16,6 +16,7 @@ export default {
   overview: 'Overview',
   lockView: 'Lock View',
   basicInfo: 'Basic Information',
+  stateDistributionTitle: "Java Thread State Distribution",
   time: 'Time',
   vmInfo: 'VM Information',
   jniRefs: 'JNI References',
@@ -123,13 +124,4 @@ export default {
     threadNameLabel: "Thread",
   },
 
-  // ----- Thread Dump Overview / Compare -----
-  threadDumpOverview: {
-    label: "Dump Overview",
-    diagnosisTitle: "Diagnosis",
-    stateDistributionTitle: "Java Thread State Distribution",
-    cpuConsumingTitle: "Top CPU Consuming Threads",
-    cpuConsumingDatasetLabel: "CPU ({unit})",
-    threadGroupTitle: "Thread Group Summary",
-  },
 }

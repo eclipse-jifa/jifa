@@ -24,6 +24,8 @@ import {
   Platform,
   Promotion
 } from '@element-plus/icons-vue';
+import * as echarts from 'echarts';
+import { isDark } from '@/composables/theme';
 import Content from '@/components/threaddump/Content.vue';
 import Thread from '@/components/threaddump/Thread.vue';
 import Monitor from '@/components/threaddump/Monitor.vue';
@@ -32,7 +34,6 @@ import Diagnose from '@/components/threaddump/Diagnose.vue';
 import CpuConsumingThreads from '@/components/threaddump/CpuConsumingThreads.vue';
 import BlockedThreads from '@/components/threaddump/BlockedThreads.vue';
 import ThreadDumpSearch from '@/components/threaddump/ThreadDumpSearch.vue';
-import ThreadDumpOverview from '@/components/threaddump/ThreadDumpOverview.vue';
 
 const { request } = useAnalysisApiRequester();
 
@@ -46,7 +47,6 @@ const activeNames = ref<string[]>([
   'javaMonitors',
   'callSiteTree',
   'threadSearch',
-  'dumpOverview'
 ]);
 
 const deadLockCount = ref(0);
@@ -71,6 +71,43 @@ const tableDataOfThreadGroupStats = computed(() => {
 });
 
 const loading = ref(false);
+
+// ---- State Distribution Chart ----
+const COLOR_PALETTE = [
+  '#003f5c', '#2f4b7c', '#665191', '#a05195', '#d45087',
+  '#f95d6a', '#ff7c43', '#ffa600', '#488f31', '#8aa1b4'
+];
+const stateChartRef = ref<HTMLElement | null>(null);
+let stateChart: echarts.ECharts | null = null;
+const stateChartData = ref<{ name: string; value: number }[]>([]);
+
+function renderStateChart() {
+  if (!stateChartRef.value || stateChartData.value.length === 0) return;
+  stateChart?.dispose();
+  stateChart = echarts.init(stateChartRef.value, isDark.value ? 'dark' : null);
+  stateChart.setOption({
+    color: COLOR_PALETTE,
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: {
+      orient: 'vertical',
+      right: '5%',
+      top: 'middle',
+      textStyle: { fontSize: 11 },
+      formatter: (name: string) => name.length > 24 ? name.slice(0, 23) + '…' : name
+    },
+    series: [{
+      type: 'pie',
+      radius: ['40%', '68%'],
+      center: ['30%', '50%'],
+      data: stateChartData.value,
+      label: { show: false },
+      emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' } }
+    }]
+  });
+}
+
+watch(isDark, () => renderStateChart());
+window.addEventListener('resize', () => stateChart?.resize());
 
 const threadDialogVisible = ref(false);
 const selectedThreadType = ref();
@@ -229,6 +266,12 @@ function buildThreadStat(key, states, counts, icon, threadType?) {
 
     threadStats.value = _threadStats;
     threadGroupStats.value = _threadGroupStats;
+
+    stateChartData.value = overview.javaStates
+      .map((name: string, i: number) => ({ name, value: overview.javaThreadStat.javaCounts[i] }))
+      .filter((d: { name: string; value: number }) => d.value > 0);
+    nextTick().then(renderStateChart);
+
     loading.value = false;
   });
 });
@@ -248,19 +291,29 @@ function buildThreadStat(key, states, counts, icon, threadType?) {
         <div style="width: 100%; max-width: 1200px">
           <el-collapse v-model="activeNames">
             <el-collapse-item name="basicInfo" :title="tdt('basicInfo')">
-              <el-table stripe :show-header="false" :data="basicInfo" v-loading="loading">
-                <el-table-column>
-                  <template #default="{ row }">
-                    <div style="display: flex; align-items: center">
-                      <el-icon>
-                        <component :is="row.icon" />
-                      </el-icon>
-                      <span style="margin-left: 10px">{{ tdt(row.key) }}</span>
-                    </div>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="value"> </el-table-column>
-              </el-table>
+              <el-row :gutter="16" align="top">
+                <el-col :span="12">
+                  <el-table stripe :show-header="false" :data="basicInfo" v-loading="loading">
+                    <el-table-column>
+                      <template #default="{ row }">
+                        <div style="display: flex; align-items: center">
+                          <el-icon>
+                            <component :is="row.icon" />
+                          </el-icon>
+                          <span style="margin-left: 10px">{{ tdt(row.key) }}</span>
+                        </div>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="value"> </el-table-column>
+                  </el-table>
+                </el-col>
+                <el-col :span="12">
+                  <div style="font-weight: 600; margin-bottom: 8px; color: var(--el-text-color-regular)">
+                    {{ tdt('stateDistributionTitle') }}
+                  </div>
+                  <div ref="stateChartRef" style="height: 180px" />
+                </el-col>
+              </el-row>
             </el-collapse-item>
 
             <el-collapse-item name="diagnosis" :title="tdt('diagnosis.title')">
@@ -368,10 +421,6 @@ function buildThreadStat(key, states, counts, icon, threadType?) {
 
             <el-collapse-item name="threadSearch" :title="tdt('threadDumpSearch.label')">
               <ThreadDumpSearch />
-            </el-collapse-item>
-
-            <el-collapse-item name="dumpOverview" :title="tdt('threadDumpOverview.label')">
-              <ThreadDumpOverview />
             </el-collapse-item>
 
             <el-collapse-item name="callSiteTree" :title="tdt('callSiteTree')">
