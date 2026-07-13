@@ -230,14 +230,19 @@ public class FileTransferRequest {
             if (!checkNotBlank(value, name, context)) {
                 return false;
             }
-            String scheme;
+
+            java.net.URL url;
             try {
-                scheme = new java.net.URI(value).getScheme();
-            } catch (java.net.URISyntaxException e) {
-                scheme = null;
+                url = new java.net.URL(value);
+            } catch (java.net.MalformedURLException e) {
+                context.buildConstraintViolationWithTemplate("Only http and https URLs are supported")
+                       .addPropertyNode(name)
+                       .addConstraintViolation();
+                return false;
             }
-            if (scheme == null
-                || !("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
+
+            String protocol = url.getProtocol();
+            if (!("http".equalsIgnoreCase(protocol) || "https".equalsIgnoreCase(protocol)) || StringUtils.isBlank(url.getHost())) {
                 context.buildConstraintViolationWithTemplate("Only http and https URLs are supported")
                        .addPropertyNode(name)
                        .addConstraintViolation();

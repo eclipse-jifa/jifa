@@ -325,7 +325,8 @@ public class StorageServiceImpl extends ConfigurationAccessor implements Storage
         String protocol = url.getProtocol();
         // Only http(s) is allowed. Reject schemes such as file, jar, ftp, etc. to
         // prevent reading arbitrary local files (or other resources) on the host.
-        Validate.isTrue("http".equalsIgnoreCase(protocol) || "https".equalsIgnoreCase(protocol),
+        Validate.isTrue(("http".equalsIgnoreCase(protocol) || "https".equalsIgnoreCase(protocol))
+                        && StringUtils.isNotBlank(url.getHost()),
                         CommonErrorCode.ILLEGAL_ARGUMENT, "Only http and https URLs are supported");
         URLConnection conn = url.openConnection();
         listener.fireTotalSize(Math.max(conn.getContentLengthLong(), 0));
