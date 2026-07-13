@@ -52,15 +52,8 @@ interface Overview {
   threadGroupStat: Record<string, ThreadStat>;
 }
 
-interface CpuThread {
-  id: number;
-  name: string;
-  cpu: number | null;
-}
-
 // ---- state ----
 const overview = ref<Overview | null>(null);
-const cpuThreads = ref<CpuThread[]>([]);
 const loading = ref(false);
 
 const threadDialogVisible = ref(false);
@@ -68,21 +61,14 @@ const selectedThreadId = ref<number | null>(null);
 
 // ---- chart DOM refs ----
 const stateChartRef = ref<HTMLElement | null>(null);
-const cpuChartRef = ref<HTMLElement | null>(null);
 const groupChartRef = ref<HTMLElement | null>(null);
 
 let stateChart: echarts.ECharts | null = null;
-let cpuChart: echarts.ECharts | null = null;
 let groupChart: echarts.ECharts | null = null;
 
 // ---- helpers ----
 function truncate(str: string, n: number): string {
   return str.length > n ? str.slice(0, n - 1) + '…' : str;
-}
-
-function openThread(id: number) {
-  selectedThreadId.value = id;
-  threadDialogVisible.value = true;
 }
 
 // ---- derived data ----
@@ -93,10 +79,6 @@ const topGroups = computed<[string, number][]>(() => {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8);
 });
-
-const cpuChartHeight = computed(() =>
-  Math.max(180, cpuThreads.value.length * 40)
-);
 
 const groupChartHeight = computed(() =>
   Math.max(180, topGroups.value.length * 40)
@@ -120,68 +102,22 @@ function renderStateChart() {
       formatter: '{b}: {c} ({d}%)'
     },
     legend: {
-      orient: 'vertical',
-      right: 10,
-      top: 'center',
-      textStyle: { fontSize: 11 }
+      orient: 'horizontal',
+      bottom: 0,
+      left: 'center',
+      textStyle: { fontSize: 10 },
+      formatter: (name: string) => name.length > 22 ? name.slice(0, 21) + '…' : name
     },
     series: [{
       type: 'pie',
-      radius: ['40%', '70%'],
-      center: ['38%', '50%'],
+      radius: ['38%', '65%'],
+      center: ['50%', '42%'],
       data,
       label: { show: false },
       emphasis: {
         itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' }
       }
     }]
-  });
-}
-
-function renderCpuChart() {
-  if (!cpuChartRef.value || cpuThreads.value.length === 0) return;
-  cpuChart?.dispose();
-  cpuChart = echarts.init(cpuChartRef.value, isDark.value ? 'dark' : null);
-
-  const maxMs = cpuThreads.value.reduce((m, t) => Math.max(m, t.cpu ?? 0), 0);
-  const unitKey = maxMs >= 3_600_000 ? 'hours' : maxMs >= 60_000 ? 'minutes' : maxMs >= 1_000 ? 'seconds' : 'milliseconds';
-  const div = unitKey === 'hours' ? 3_600_000 : unitKey === 'minutes' ? 60_000 : unitKey === 'seconds' ? 1_000 : 1;
-  const unitLabel = tdt('cpuConsumingThreads.' + unitKey);
-
-  const names = cpuThreads.value.map(t => truncate(t.name, 35));
-  const values = cpuThreads.value.map(t => parseFloat(((t.cpu ?? 0) / div).toFixed(3)));
-
-  cpuChart.setOption({
-    color: COLOR_PALETTE,
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' },
-      formatter: (params: any) => `${params[0].name}<br/>${params[0].value} ${unitLabel}`
-    },
-    grid: { left: 220, right: 20, top: 10, bottom: 30 },
-    xAxis: {
-      type: 'value',
-      name: `${tdt('cpuConsumingThreads.cpuConsumptionLabel')} (${unitLabel})`
-    },
-    yAxis: {
-      type: 'category',
-      data: names,
-      inverse: true,
-      axisLabel: { fontSize: 11, width: 200, overflow: 'truncate' }
-    },
-    series: [{
-      type: 'bar',
-      cursor: 'pointer',
-      data: values.map((v, i) => ({
-        value: v,
-        itemStyle: { color: COLOR_PALETTE[i % COLOR_PALETTE.length] }
-      }))
-    }]
-  });
-
-  cpuChart.on('click', (params: any) => {
-    const thread = cpuThreads.value[params.dataIndex];
-    if (thread) openThread(thread.id);
   });
 }
 
@@ -216,13 +152,11 @@ function renderGroupChart() {
 
 function renderAllCharts() {
   renderStateChart();
-  renderCpuChart();
   renderGroupChart();
 }
 
 function resizeCharts() {
   stateChart?.resize();
-  cpuChart?.resize();
   groupChart?.resize();
 }
 
@@ -233,12 +167,8 @@ onMounted(async () => {
   window.addEventListener('resize', resizeCharts);
   loading.value = true;
   try {
-    const [ov, cpu] = await Promise.all([
-      request('overview'),
-      request('cpuConsumingThreads', { max: 10, type: 'JAVA' })
-    ]);
+    const ov = await request('overview');
     overview.value = ov;
-    cpuThreads.value = cpu ?? [];
     await nextTick();
     renderAllCharts();
   } finally {
@@ -249,7 +179,6 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('resize', resizeCharts);
   stateChart?.dispose();
-  cpuChart?.dispose();
   groupChart?.dispose();
 });
 </script>
@@ -257,29 +186,19 @@ onUnmounted(() => {
 <template>
   <div v-loading="loading">
     <template v-if="overview">
-      <!-- Diagnosis -->
-      <el-card :header="tdt('threadDumpOverview.diagnosisTitle')" style="margin-bottom: 16px">
-        <Diagnose />
-      </el-card>
-
-      <!-- Charts row: state distribution + CPU -->
-      <el-row :gutter="16" style="margin-bottom: 16px" align="stretch">
-        <!-- Java Thread State Distribution -->
-        <el-col :span="8">
-          <el-card :header="tdt('threadDumpOverview.stateDistributionTitle')" style="height: 100%">
-            <div ref="stateChartRef" style="height: 240px" />
+      <!-- Basic Information + State Distribution -->
+      <el-row :gutter="16" style="margin-bottom: 16px" align="top">
+        <!-- Diagnosis -->
+        <el-col :span="16">
+          <el-card :header="tdt('threadDumpOverview.diagnosisTitle')" style="height: 100%">
+            <Diagnose />
           </el-card>
         </el-col>
 
-        <!-- Top CPU Consuming Threads -->
-        <el-col :span="16">
-          <el-card :header="tdt('threadDumpOverview.cpuConsumingTitle')" style="height: 100%">
-            <div
-              v-if="cpuThreads.length > 0"
-              ref="cpuChartRef"
-              :style="{ height: `${cpuChartHeight}px`, cursor: 'pointer' }"
-            />
-            <el-empty v-else :description="'-'" />
+        <!-- Java Thread State Distribution -->
+        <el-col :span="8">
+          <el-card :header="tdt('threadDumpOverview.stateDistributionTitle')" style="height: 100%">
+            <div ref="stateChartRef" style="height: 280px" />
           </el-card>
         </el-col>
       </el-row>
