@@ -122,14 +122,12 @@ function renderTree(svgEl: SVGSVGElement, root: TreeNode) {
     .style('cursor', 'pointer')
     .on('click', (_e, d) => openThread((d.data as TreeNode).id));
 
-  // Only label leaf nodes (blocked threads) — the root (blocking thread)
-  // is already shown in the <p> title above; rendering it here too causes
-  // a duplicate label that overflows (via overflow:visible) into the title.
+  // Label all nodes: root (blocking thread) left of its circle, leaf nodes (blocked) right of theirs.
+  // This makes both the red blocker and the blue blocked threads clearly identifiable in the tree.
   node
-    .filter((d: any) => !d.children)
     .append('text')
     .attr('dy', '.35em')
-    .attr('x', 15)
+    .attr('x', (d: any) => (d.children ? -20 : 15))
     .attr('y', 0)
     .style('text-anchor', (d: any) => (d.children ? 'end' : 'start'))
     .style('font-size', '13px')
