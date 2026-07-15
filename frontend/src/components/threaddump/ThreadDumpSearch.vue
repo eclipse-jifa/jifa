@@ -20,8 +20,8 @@ import { tdt } from '@/i18n/i18n';
 import { useAnalysisApiRequester } from '@/composables/analysis-api-requester';
 import ThreadDumpSearchForm from './ThreadDumpSearchForm.vue';
 import type { SearchModel } from './ThreadDumpSearchForm.vue';
-import Thread from './Thread.vue';
-import { stateColor } from '@/components/threaddump/thread-state-colors';
+import { stateTagStyle } from '@/components/threaddump/thread-state-colors';
+import { TABLE_HEADER_CELL_STYLE } from '@/components/styles';
 
 const { request } = useAnalysisApiRequester();
 
@@ -39,8 +39,6 @@ const loading = ref(false);
 const searched = ref(false);
 const currentSearch = ref<SearchModel | null>(null);
 const searchResult = ref<SearchHit[]>([]);
-const threadDialogVisible = ref(false);
-const selectedThreadId = ref<number | null>(null);
 
 // --- chart ---
 
@@ -59,6 +57,13 @@ function getThreadState(hit: SearchHit): string {
   return hit.javaState ?? hit.osState;
 }
 
+/** Formats a millisecond duration for display (e.g. "1.25 s", "320 ms"). */
+function prettyDuration(ms: number): string {
+  if (ms >= 60_000) return (ms / 60_000).toFixed(2) + ' min';
+  if (ms >= 1_000) return (ms / 1_000).toFixed(2) + ' s';
+  return ms.toFixed(ms < 10 ? 2 : 0) + ' ms';
+}
+
 /** Sanitise and highlight a single content line. */
 function renderContent(hit: SearchHit): string {
   const model = currentSearch.value;
@@ -75,8 +80,7 @@ function renderContent(hit: SearchHit): string {
   });
 
   let content = '';
-  // skip line 0 (thread header – already shown as card title)
-  hit.lines.slice(1).forEach((line) => {
+  hit.lines.forEach((line) => {
     let modified = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '\n';
     patterns.forEach((p) => {
       modified = modified.replace(p, '<span class="search-hit">$1</span>');
@@ -84,11 +88,6 @@ function renderContent(hit: SearchHit): string {
     content += modified;
   });
   return content;
-}
-
-function openThread(id: number) {
-  selectedThreadId.value = id;
-  threadDialogVisible.value = true;
 }
 
 // --- search ---
@@ -130,75 +129,109 @@ async function doSearch(model: SearchModel) {
       <ThreadDumpSearchForm @submit="doSearch" />
     </div>
 
-    <div v-loading="loading" style="min-height: 40px">
+    <div v-if="searched" v-loading="loading" style="min-height: 40px">
       <template v-if="searched && !loading">
-        <!-- summary row -->
-        <el-row v-if="searchResult.length > 0" :gutter="16" style="margin-top: 16px">
-          <el-col :span="24">
-            <el-card :header="tdt('threadDumpSearch.threadStatesChartTitle')">
-              <div style="display: flex; flex-wrap: wrap; gap: 6px">
-                <el-tag
-                  v-for="[state, count] in stateCounts"
-                  :key="state"
-                  :color="stateColor(state)"
-                  style="color: #fff; border: none"
-                  disable-transitions
-                >
-                  {{ state }}: {{ count }}
-                </el-tag>
-              </div>
-              <el-tag type="info" size="large" style="margin-top: 8px">
-                {{ searchResult.length }} {{ tdt('threadDumpSearch.resultsCount') }}
-              </el-tag>
-            </el-card>
-          </el-col>
-        </el-row>
+        <!-- summary bar -->
+        <div class="result-summary">
+          <span class="result-count">
+            {{ searchResult.length }} {{ tdt('threadDumpSearch.resultsCount') }}
+          </span>
+          <el-divider direction="vertical" v-if="searchResult.length > 0" />
+          <el-tag
+            v-if="searchResult.length > 0"
+            v-for="[state, count] in stateCounts"
+            :key="state"
+            :style="stateTagStyle(state)"
+            size="small"
+            disable-transitions
+          >
+            {{ state }}&nbsp;{{ count }}
+          </el-tag>
+        </div>
 
-        <el-empty v-else :description="tdt('threadDumpSearch.noResults')" style="margin-top: 16px" />
-
-        <!-- result cards -->
-        <el-card
-          v-for="hit in searchResult"
-          :key="hit.id"
-          class="thread-card"
-          style="margin-top: 12px"
+        <!-- result table -->
+        <el-table
+          v-if="searchResult.length > 0"
+          :data="searchResult"
+          :header-cell-style="TABLE_HEADER_CELL_STYLE"
+          stripe
+          style="width: 100%; margin-top: 12px"
         >
-          <template #header>
-            <el-row :gutter="16" align="middle">
-              <el-col :span="16">
-                <el-button link type="primary" @click="openThread(hit.id)">
-                  {{ hit.name }}
-                </el-button>
-              </el-col>
-              <el-col :span="8" style="text-align: right">
-                <el-tag type="info" effect="dark" round size="small">
-                  {{ getThreadState(hit) }}
-                </el-tag>
-              </el-col>
-            </el-row>
-          </template>
-          <pre class="thread-content" v-html="renderContent(hit)" />
-        </el-card>
+          <el-table-column type="expand">
+            <template #default="{ row }">
+              <pre class="thread-content" v-html="renderContent(row)" />
+            </template>
+          </el-table-column>
+
+          <el-table-column
+            prop="name"
+            :label="tdt('threadDumpSearch.threadNameLabel')"
+            show-overflow-tooltip
+          />
+
+          <el-table-column :label="tdt('threadDumpSearch.stateLabel')">
+            <template #default="{ row }">
+              <el-tag :style="stateTagStyle(getThreadState(row))" size="small" disable-transitions>
+                {{ getThreadState(row) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+
+          <el-table-column
+            prop="cpu"
+            :label="tdt('threadDumpSearch.cpuLabel')"
+            align="right"
+            sortable
+          >
+            <template #default="{ row }">
+              <span v-if="row.cpu > 0">{{ prettyDuration(row.cpu) }}</span>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+
+          <el-table-column
+            prop="elapsed"
+            :label="tdt('threadDumpSearch.elapsedLabel')"
+            align="right"
+            sortable
+          >
+            <template #default="{ row }">
+              <span v-if="row.elapsed > 0">{{ prettyDuration(row.elapsed) }}</span>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+        </el-table>
       </template>
     </div>
-
-    <el-dialog v-model="threadDialogVisible" width="70%" top="5vh" destroy-on-close>
-      <Thread v-if="selectedThreadId !== null" :ids="[selectedThreadId]" />
-    </el-dialog>
   </div>
 </template>
 
 <style scoped>
-.thread-content {
-  margin: 0;
-  padding: 10px;
-  background-color: var(--el-fill-color-darker);
-  color: var(--el-text-color-primary);
-  overflow: auto;
-  white-space: pre;
+.result-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.result-count {
   font-size: var(--el-font-size-small);
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+}
+
+/* Same look as the stack content shown in Thread.vue / MonitorThread.vue */
+.thread-content {
+  margin: 5px 12px;
+  border-radius: 8px;
+  padding: 7px;
+  background-color: rgba(var(--el-color-primary-rgb), 0.1);
+  white-space: pre;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: auto;
   font-family: var(--el-font-family);
-  border-radius: var(--el-border-radius-base);
 }
 
 :deep(.search-hit) {

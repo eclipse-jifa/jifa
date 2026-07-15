@@ -58,7 +58,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Thread dump analyzer
@@ -390,6 +389,8 @@ public class ThreadDumpAnalyzer {
 
     /**
      * Returns the threads with the highest CPU usage, in descending order.
+     * Threads without CPU information (i.e. the dump was taken without
+     * {@code -e} / cpu data) are excluded.
      *
      * @param type limit to threads of this type; {@code null} means all types
      * @param max  maximum number of results; {@code -1} means unlimited
@@ -397,48 +398,13 @@ public class ThreadDumpAnalyzer {
      */
     public List<VThread> cpuConsumingThreads(@ApiParameterMeta(required = false) ThreadType type,
                                               int max) {
-        Stream<Thread> stream = snapshot.getThreadMap().values().stream()
-                .filter(t -> type == null || t.getType() == type);
-        stream = stream.sorted(Comparator.comparingDouble(Thread::getCpu).reversed())
-                .limit(max < 0 ? Integer.MAX_VALUE : max);
-        return stream.map(this::convertToVThread).collect(Collectors.toList());
-    }
-
-    /**
-     * Computes which threads consumed the most CPU <em>between</em> two thread
-     * dumps by matching threads via their native thread id ({@code tid}).
-     *
-     * @param other the second (later) thread dump analyzer
-     * @param max   maximum number of results; {@code -1} means unlimited
-     * @param type  limit to threads of this type; {@code null} means all types
-     * @return threads sorted by delta-CPU descending
-     */
-    public List<VThread> cpuConsumingThreadsCompare(ThreadDumpAnalyzer other, int max,
-                                                     @ApiParameterMeta(required = false) ThreadType type) {
-        int limit = max < 0 ? Integer.MAX_VALUE : max;
-        Map<Long, Thread> otherByTid = other.snapshot.getThreadMap().values().stream()
-            .collect(Collectors.toMap(Thread::getTid, t -> t, (a, b) -> a));
- 
-        Map<Thread, Double> cpuDelta = new HashMap<>();
-        for (Thread first : snapshot.getThreadMap().values()) {
-            if (type != null && first.getType() != type) {
-                continue;
-            }
-            Thread second = otherByTid.get(first.getTid());
-            if (second != null && second.getCpu() > 0) {
-                cpuDelta.put(first, second.getCpu() - first.getCpu());
-            }
-        }
-        List<VThread> result = new ArrayList<>();
-        cpuDelta.entrySet().stream()
-                .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
-                .limit(limit)
-                .forEach(e -> {
-                    VThread vt = convertToVThread(e.getKey());
-                    vt.setCpu(e.getValue());
-                    result.add(vt);
-                });
-        return result;
+        return snapshot.getThreadMap().values().stream()
+                .filter(t -> type == null || t.getType() == type)
+                .filter(t -> t.getCpu() > 0)
+                .sorted(Comparator.comparingDouble(Thread::getCpu).reversed())
+                .limit(max < 0 ? Integer.MAX_VALUE : max)
+                .map(this::convertToVThread)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -469,6 +435,7 @@ public class ThreadDumpAnalyzer {
      * @param allowedJavaStates if non-empty, only include threads whose Java state is
      *                          one of these values
      * @return matching threads together with their raw content lines
+     * @throws IOException if the dump file cannot be read
      */
     public List<SearchHit> searchThreads(
             @ApiParameterMeta(required = false) List<String> term,
@@ -477,7 +444,7 @@ public class ThreadDumpAnalyzer {
             @ApiParameterMeta(required = false) Boolean searchStack,
             @ApiParameterMeta(required = false) Boolean regex,
             @ApiParameterMeta(required = false) Boolean matchCase,
-            @ApiParameterMeta(required = false) List<String> allowedJavaStates) {
+            @ApiParameterMeta(required = false) List<String> allowedJavaStates) throws IOException {
         if (term == null || term.isEmpty()) {
             return Collections.emptyList();
         }
@@ -497,8 +464,7 @@ public class ThreadDumpAnalyzer {
             }
         }
 
-        List<SearchHit> results = new ArrayList<>();
-
+        List<Thread> candidates = new ArrayList<>();
         CollectionUtil.forEach(t -> {
             // Optional state pre-filter
             if (allowedJavaStates != null && !allowedJavaStates.isEmpty()) {
@@ -508,43 +474,45 @@ public class ThreadDumpAnalyzer {
                         ? String.valueOf(jt.getJavaThreadState()) : "";
                 if (!allowedJavaStates.contains(state)) return;
             }
-
-            List<String> rawLines;
-            try {
-                rawLines = rawContentOfThread(t.getId());
-            } catch (IOException e) {
-                rawLines = Collections.emptyList();
-            }
-
-            String nameStr  = t.getName() != null ? t.getName() : "";
-            String stateStr = getThreadState(t);
-            String stackStr = rawLines.size() > 1
-                    ? String.join("\n", rawLines.subList(1, rawLines.size()))
-                    : "";
-
-            boolean matches = patterns.stream().allMatch(p ->
-                    (doSearchName  && p.matcher(nameStr).find())
-                 || (doSearchState && p.matcher(stateStr).find())
-                 || (doSearchStack && p.matcher(stackStr).find())
-            );
-
-            if (matches) {
-                SearchHit hit = new SearchHit();
-                hit.setId(t.getId());
-                hit.setName(t.getName());
-                hit.setOsState(String.valueOf(t.getOsThreadState()));
-                if (t instanceof JavaThread) {
-                    JavaThread jt = (JavaThread) t;
-                    if (jt.getJavaThreadState() != null) {
-                        hit.setJavaState(String.valueOf(jt.getJavaThreadState()));
-                    }
-                }
-                if (t.getCpu() > 0)     hit.setCpu(t.getCpu());
-                if (t.getElapsed() > 0) hit.setElapsed(t.getElapsed());
-                hit.setLines(rawLines);
-                results.add(hit);
-            }
+            candidates.add(t);
         }, snapshot.getJavaThreads(), snapshot.getNonJavaThreads());
+
+        // When the stack trace is not part of the search, match on name/state
+        // first so that raw content is only read for actual hits.
+        if (!doSearchStack) {
+            candidates.removeIf(t -> !matchesAllTerms(patterns, t, null, doSearchName, doSearchState, false));
+        }
+
+        Map<Integer, List<String>> contents = readThreadContents(candidates);
+
+        List<SearchHit> results = new ArrayList<>();
+        for (Thread t : candidates) {
+            List<String> rawLines = contents.getOrDefault(t.getId(), Collections.emptyList());
+
+            if (doSearchStack) {
+                String stackStr = rawLines.size() > 1
+                        ? String.join("\n", rawLines.subList(1, rawLines.size()))
+                        : "";
+                if (!matchesAllTerms(patterns, t, stackStr, doSearchName, doSearchState, true)) {
+                    continue;
+                }
+            }
+
+            SearchHit hit = new SearchHit();
+            hit.setId(t.getId());
+            hit.setName(t.getName());
+            hit.setOsState(String.valueOf(t.getOsThreadState()));
+            if (t instanceof JavaThread) {
+                JavaThread jt = (JavaThread) t;
+                if (jt.getJavaThreadState() != null) {
+                    hit.setJavaState(String.valueOf(jt.getJavaThreadState()));
+                }
+            }
+            if (t.getCpu() > 0)     hit.setCpu(t.getCpu());
+            if (t.getElapsed() > 0) hit.setElapsed(t.getElapsed());
+            hit.setLines(rawLines);
+            results.add(hit);
+        }
 
         return results;
     }
@@ -552,6 +520,52 @@ public class ThreadDumpAnalyzer {
     // ------------------------------------------------------------------
     // private helpers
     // ------------------------------------------------------------------
+
+    /**
+     * Returns {@code true} if every pattern matches at least one of the enabled
+     * search fields of the given thread (AND semantics across terms).
+     */
+    private boolean matchesAllTerms(List<Pattern> patterns, Thread t, String stackStr,
+                                    boolean searchName, boolean searchState, boolean searchStack) {
+        String nameStr  = t.getName() != null ? t.getName() : "";
+        String stateStr = getThreadState(t);
+        return patterns.stream().allMatch(p ->
+                (searchName  && p.matcher(nameStr).find())
+             || (searchState && p.matcher(stateStr).find())
+             || (searchStack && stackStr != null && p.matcher(stackStr).find())
+        );
+    }
+
+    /**
+     * Reads the raw content lines of the given threads in a single sequential
+     * pass over the dump file (threads are processed in file order).
+     *
+     * @return map from thread id to its raw content lines
+     */
+    private Map<Integer, List<String>> readThreadContents(List<Thread> threads) throws IOException {
+        Map<Integer, List<String>> contents = new HashMap<>();
+        if (threads.isEmpty()) {
+            return contents;
+        }
+        List<Thread> ordered = new ArrayList<>(threads);
+        ordered.sort(Comparator.comparingInt(Thread::getLineStart));
+        try (LineNumberReader lnr = new LineNumberReader(new FileReader(snapshot.getPath()))) {
+            int current = 1;
+            for (Thread t : ordered) {
+                while (current < t.getLineStart()) {
+                    lnr.readLine();
+                    current++;
+                }
+                List<String> lines = new ArrayList<>(Math.max(t.getLineEnd() - t.getLineStart() + 1, 0));
+                while (current <= t.getLineEnd()) {
+                    lines.add(lnr.readLine());
+                    current++;
+                }
+                contents.put(t.getId(), lines);
+            }
+        }
+        return contents;
+    }
 
     /**
      * Converts a model {@link Thread} to a lightweight {@link VThread} VO,

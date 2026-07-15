@@ -16,7 +16,6 @@ export default {
   overview: 'Overview',
   lockView: 'Lock View',
   basicInfo: 'Basic Information',
-  stateDistributionTitle: "Java Thread State Distribution",
   time: 'Time',
   vmInfo: 'VM Information',
   jniRefs: 'JNI References',
@@ -42,6 +41,7 @@ export default {
   blockedThreads: {
     // {blocker} = name of the blocking thread, {count} = number of blocked threads
     title: "{blocker} is blocking 1 thread | {blocker} is blocking {count} threads",
+    none: "No blocked threads found",
   },
 
   // ----- CPU Consuming Threads -----
@@ -104,24 +104,27 @@ export default {
 
   // ----- Thread Search -----
   threadDumpSearch: {
-    label: "Search Threads",
-    searchTitle: "Search Threads",
+    label: "Find Threads",
+    searchTitle: "Find Threads",
+    searchPlaceholder: "Enter keywords to match thread names, states and stack traces",
     searchInput: "Search term",
     requiredMessage: "Please enter a search term",
-    advancedToggle: "Advanced",
-    searchFields: "Search Fields",
-    searchFieldName: "Thread Name",
-    searchFieldState: "Thread State",
-    searchFieldStack: "Stack Trace",
-    searchOptions: "Options",
+    advancedToggle: "More Options",
+    matchFields: "Match Fields",
+    matchFieldName: "Thread Name",
+    matchFieldState: "Thread State",
+    matchFieldStack: "Stack Trace",
+    otherOptions: "Other",
     searchOptionRegex: "Regular Expression",
     searchOptionMatchCase: "Match Case",
     searchOptionThreadStates: "Filter States",
     searchOptionThreadStatesPlaceholder: "All states",
     threadStatesChartTitle: "Thread States",
     resultsCount: "threads found",
-    noResults: "No matching threads found.",
     threadNameLabel: "Thread",
+    stateLabel: "State",
+    cpuLabel: "CPU Time",
+    elapsedLabel: "Elapsed",
   },
 
 }

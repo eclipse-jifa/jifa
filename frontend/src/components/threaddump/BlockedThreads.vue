@@ -20,7 +20,7 @@ import * as d3 from 'd3';
 import { useAnalysisApiRequester } from '@/composables/analysis-api-requester';
 import { tdt } from '@/i18n/i18n';
 import { useI18n } from 'vue-i18n';
-import { isDark } from '@/composables/theme';
+import { Lock, WarningFilled } from '@element-plus/icons-vue';
 import Thread from '@/components/threaddump/Thread.vue';
 
 const { request } = useAnalysisApiRequester();
@@ -42,7 +42,6 @@ interface VBlockingThread {
 interface TreeNode {
   name: string;
   value: number;
-  level: string;
   id: number;
   children?: TreeNode[];
 }
@@ -65,11 +64,6 @@ function openThread(id: number) {
 }
 
 function renderTree(svgEl: SVGSVGElement, root: TreeNode) {
-  const dark = isDark.value;
-  const textColor = dark ? '#e0e0e0' : '#303133';
-  const linkColor = dark ? '#555' : '#ccc';
-  const linkHoverColor = dark ? '#aaa' : '#333';
-
   const margin = { top: 10, right: 160, bottom: 10, left: 200 };
   const neededHeight = Math.max(60, root.children!.length * 25);
   const width = 660 - margin.left - margin.right;
@@ -112,48 +106,35 @@ function renderTree(svgEl: SVGSVGElement, root: TreeNode) {
     .data(nodes.descendants())
     .enter()
     .append('g')
-    .attr('class', (d) => 'node' + (d.children ? ' node--internal' : ' node--leaf'))
+    .attr('class', (d) => 'node' + (d.children ? ' node--blocker' : ' node--blocked'))
     .attr('transform', (d: any) => `translate(${d.y},${d.x})`);
 
   node
     .append('circle')
     .attr('r', (d) => (d.data as TreeNode).value)
-    .style('fill', (d) => (d.data as TreeNode).level)
-    .style('cursor', 'pointer')
     .on('click', (_e, d) => openThread((d.data as TreeNode).id));
 
   // Label all nodes: root (blocking thread) left of its circle, leaf nodes (blocked) right of theirs.
-  // This makes both the red blocker and the blue blocked threads clearly identifiable in the tree.
+  // Colors come from Element Plus CSS variables (see <style>), so both themes are supported.
   node
     .append('text')
+    .attr('class', 'node-label')
     .attr('dy', '.35em')
     .attr('x', (d: any) => (d.children ? -20 : 15))
     .attr('y', 0)
     .style('text-anchor', (d: any) => (d.children ? 'end' : 'start'))
-    .style('font-size', '13px')
-    .style('font-family', 'sans-serif')
-    .style('fill', (d: any) => (d.children ? '#F56C6C' : textColor))
-    .style('font-weight', (d: any) => (d.children ? '600' : 'normal'))
-    .style('cursor', 'pointer')
     .text((d) => (d.data as TreeNode).name)
     .on('click', (_e, d) => openThread((d.data as TreeNode).id));
-
-  // Apply dynamic link colors via inline styles so dark/light mode is respected.
-  svg.selectAll<SVGPathElement, unknown>('.link')
-    .style('stroke', linkColor);
-  svgEl.style.setProperty('--link-hover-color', linkHoverColor);
 }
 
 function buildTree(bt: VBlockingThread): TreeNode {
   return {
     name: bt.blockingThread.name,
     value: 15,
-    level: '#F56C6C',
     id: bt.blockingThread.id,
     children: bt.blockedThreads.map((c) => ({
       name: c.name,
       value: 10,
-      level: '#409EFF',
       id: c.id
     }))
   };
@@ -183,28 +164,27 @@ onMounted(() => {
 onBeforeUpdate(() => {
   svgRefs.value = [];
 });
-
-// Re-draw when the user switches between light and dark mode.
-watch(isDark, () => drawTrees());
 </script>
 
 <template>
   <div v-loading="loading">
-    <div v-if="blockingThreads.length === 0 && !loading" style="color: #67c23a; padding: 8px 0">
-      ✔ {{ tdt('diagnosis.type.NO_ISSUES') }}
-    </div>
+    <el-alert
+      v-if="blockingThreads.length === 0 && !loading"
+      type="success"
+      :title="tdt('blockedThreads.none')"
+      :closable="false"
+      show-icon
+    />
 
-    <div
-      v-for="(bt, idx) in blockingThreads"
-      :key="idx"
-      style="margin-bottom: 24px; overflow-x: auto"
-    >
-      <p style="margin: 0 0 6px; font-weight: 500; color: var(--el-color-danger)">
-        ⚠ {{ blockedTitle(bt) }}
-        <span v-if="bt.heldLock" style="font-weight: normal; color: var(--el-text-color-secondary); font-size: var(--el-font-size-small)">
-          — locked {{ bt.heldLock.class }}
-        </span>
-      </p>
+    <div v-for="(bt, idx) in blockingThreads" :key="idx" class="blocked-group">
+      <div class="blocked-group__header">
+        <el-icon class="blocked-group__icon"><WarningFilled /></el-icon>
+        <span class="blocked-group__title">{{ blockedTitle(bt) }}</span>
+        <el-tag v-if="bt.heldLock" type="info" size="small" class="blocked-group__lock">
+          <el-icon style="vertical-align: -2px; margin-right: 4px"><Lock /></el-icon>
+          {{ bt.heldLock.class }}
+        </el-tag>
+      </div>
       <svg
         :ref="(el) => { if (el) svgRefs[idx] = el as SVGSVGElement }"
         :key="'svg-' + idx"
@@ -219,20 +199,63 @@ watch(isDark, () => drawTrees());
 </template>
 
 <style scoped>
+.blocked-group {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: var(--el-border-radius-base);
+  background-color: var(--el-bg-color);
+  padding: 12px 16px 16px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+.blocked-group__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.blocked-group__icon {
+  color: var(--el-color-danger);
+}
+.blocked-group__title {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.blocked-group__lock {
+  max-width: 100%;
+}
 :deep(.link) {
   fill: none;
+  stroke: var(--el-border-color-darker);
   stroke-width: 1px;
 }
 :deep(.link:hover) {
-  stroke: var(--link-hover-color, #333);
+  stroke: var(--el-text-color-secondary);
   stroke-width: 2px;
 }
 :deep(.node circle) {
-  stroke: steelblue;
   stroke-width: 1px;
+  cursor: pointer;
+}
+:deep(.node--blocker > circle) {
+  fill: var(--el-color-danger);
+  stroke: var(--el-color-danger-dark-2);
+}
+:deep(.node--blocked > circle) {
+  fill: var(--el-color-primary);
+  stroke: var(--el-color-primary-dark-2);
 }
 :deep(.node:hover circle) {
-  stroke: #007bff;
   stroke-width: 2px;
+}
+:deep(.node-label) {
+  fill: var(--el-text-color-primary);
+  font-size: 13px;
+  font-family: var(--el-font-family);
+  cursor: pointer;
+}
+:deep(.node--blocker > .node-label) {
+  fill: var(--el-color-danger);
+  font-weight: 600;
 }
 </style>

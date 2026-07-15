@@ -21,6 +21,7 @@ import { useAnalysisApiRequester } from '@/composables/analysis-api-requester';
 import { tdt } from '@/i18n/i18n';
 import { useI18n } from 'vue-i18n';
 import Thread from '@/components/threaddump/Thread.vue';
+import { TABLE_HEADER_CELL_STYLE } from '@/components/styles';
 
 const { request } = useAnalysisApiRequester();
 const { t } = useI18n();
@@ -56,10 +57,10 @@ function loadData() {
 }
 
 function severityColor(severity: string): string {
-  if (severity === 'ERROR')   return 'color: #F56C6C';
-  if (severity === 'WARNING') return 'color: #E6A23C';
-  if (severity === 'OK')      return 'color: #67C23A';
-  return 'color: #909399';
+  if (severity === 'ERROR')   return 'color: var(--el-color-danger)';
+  if (severity === 'WARNING') return 'color: var(--el-color-warning)';
+  if (severity === 'OK')      return 'color: var(--el-color-success)';
+  return 'color: var(--el-color-info)';
 }
 
 function messageText(row: DiagnosticEntry): string {
@@ -91,18 +92,25 @@ onMounted(() => {
     <el-table
       :data="diagnostics"
       stripe
+      :header-cell-style="TABLE_HEADER_CELL_STYLE"
       style="width: 100%"
     >
       <!-- Message column -->
-      <el-table-column :label="tdt('diagnosis.messageColumn')" min-width="280">
+      <el-table-column :label="tdt('diagnosis.messageColumn')">
         <template #default="{ row }">
-          <el-icon :style="severityColor(row.severity)" :title="row.severity">
-            <CircleCloseFilled v-if="row.severity === 'ERROR'" />
-            <WarningFilled v-else-if="row.severity === 'WARNING'" />
-            <CircleCheckFilled v-else-if="row.severity === 'OK'" />
-            <InfoFilled v-else />
-          </el-icon>
-          <span style="margin-left: 10px">{{ messageText(row) }}</span>
+          <div style="display: flex; align-items: center">
+            <el-icon
+              style="flex-shrink: 0"
+              :style="severityColor(row.severity)"
+              :title="row.severity"
+            >
+              <CircleCloseFilled v-if="row.severity === 'ERROR'" />
+              <WarningFilled v-else-if="row.severity === 'WARNING'" />
+              <CircleCheckFilled v-else-if="row.severity === 'OK'" />
+              <InfoFilled v-else />
+            </el-icon>
+            <span style="margin-left: 10px">{{ messageText(row) }}</span>
+          </div>
         </template>
       </el-table-column>
 

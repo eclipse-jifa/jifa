@@ -79,7 +79,9 @@ function buildChartOption(threads: CpuThread[]) {
       grid: { left: 220, right: 20, top: 10, bottom: 40 },
       xAxis: {
         type: 'value',
-        name: `${tdt('cpuConsumingThreads.cpuConsumptionLabel')} (${unitLabel})`
+        name: `${tdt('cpuConsumingThreads.cpuConsumptionLabel')} (${unitLabel})`,
+        nameLocation: 'middle',
+        nameGap: 28
       },
       yAxis: {
         type: 'category',
@@ -151,15 +153,19 @@ onMounted(async () => {
   window.addEventListener('resize', resize);
   loading.value = true;
   try {
-    const [java, all] = await Promise.all([
+    // Non-Java threads span multiple backend types (JIT/GC/VM), so query each
+    // type separately and merge; deriving them from the overall top list would
+    // miss entries whenever Java threads dominate the top ranks.
+    const [java, jit, gc, vm] = await Promise.all([
       request('cpuConsumingThreads', { max: 10, type: 'JAVA' }),
-      request('cpuConsumingThreads', { max: 10 })
+      request('cpuConsumingThreads', { max: 10, type: 'JIT' }),
+      request('cpuConsumingThreads', { max: 10, type: 'GC' }),
+      request('cpuConsumingThreads', { max: 10, type: 'VM' })
     ]);
-    const javaList: CpuThread[] = java ?? [];
-    const allList: CpuThread[] = all ?? [];
-    const javaIds = new Set(javaList.map((t: CpuThread) => t.id));
-    javaThreads.value = javaList;
-    nonJavaThreads.value = allList.filter((t: CpuThread) => !javaIds.has(t.id));
+    javaThreads.value = java ?? [];
+    nonJavaThreads.value = [...(jit ?? []), ...(gc ?? []), ...(vm ?? [])]
+      .sort((a: CpuThread, b: CpuThread) => (b.cpu ?? 0) - (a.cpu ?? 0))
+      .slice(0, 10);
     await nextTick();
     renderAllCharts();
   } finally {

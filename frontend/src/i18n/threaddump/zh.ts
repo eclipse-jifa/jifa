@@ -16,7 +16,6 @@ export default {
   overview: '概览',
   lockView: '锁视图',
   basicInfo: '基础信息',
-  stateDistributionTitle: "Java 线程状态分布",
   threadSummary: "线程概要",
   time: '时间',
   vmInfo: '虚拟机',
@@ -41,6 +40,7 @@ export default {
   blockedThreadsLabel: "阻塞线程",
   blockedThreads: {
     title: "{blocker} 阻塞了 1 个线程 | {blocker} 阻塞了 {count} 个线程",
+    none: "没有发现被阻塞的线程",
   },
 
   // ----- CPU 耗时线程 -----
@@ -95,24 +95,27 @@ export default {
 
   // ----- Thread Search -----
   threadDumpSearch: {
-    label: "搜索线程",
-    searchTitle: "搜索线程",
+    label: "查找线程",
+    searchTitle: "查找线程",
+    searchPlaceholder: "输入关键字，可匹配线程名、状态和调用栈",
     searchInput: "搜索词",
     requiredMessage: "请输入搜索词",
-    advancedToggle: "高级",
-    searchFields: "搜索字段",
-    searchFieldName: "线程名称",
-    searchFieldState: "线程状态",
-    searchFieldStack: "调用栈",
-    searchOptions: "选项",
+    advancedToggle: "更多选项",
+    matchFields: "匹配字段",
+    matchFieldName: "线程名称",
+    matchFieldState: "线程状态",
+    matchFieldStack: "调用栈",
+    otherOptions: "其他",
     searchOptionRegex: "正则表达式",
     searchOptionMatchCase: "区分大小写",
     searchOptionThreadStates: "状态过滤",
     searchOptionThreadStatesPlaceholder: "所有状态",
     threadStatesChartTitle: "线程状态",
     resultsCount: "个线程匹配",
-    noResults: "未找到匹配的线程。",
     threadNameLabel: "线程",
+    stateLabel: "状态",
+    cpuLabel: "CPU 耗时",
+    elapsedLabel: "运行时长",
   },
 
 }

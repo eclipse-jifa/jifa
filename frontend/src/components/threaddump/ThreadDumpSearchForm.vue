@@ -17,6 +17,7 @@
  -->
 <script setup lang="ts">
 import { tdt } from '@/i18n/i18n';
+import { ArrowDown, Search } from '@element-plus/icons-vue';
 import type { FormRules } from 'element-plus';
 
 export interface SearchModel {
@@ -88,92 +89,125 @@ function submitSearchForm() {
 </script>
 
 <template>
-  <el-card :header="tdt('threadDumpSearch.searchTitle')">
-    <el-form
-      ref="formRef"
-      :model="search"
-      :rules="rules"
-      label-width="auto"
-      size="small"
-      @submit.prevent="submitSearchForm"
-    >
-      <div style="display: flex; justify-content: center">
-        <div style="width: 100%; max-width: 800px">
-          <el-row :gutter="16" align="bottom">
-            <el-col :span="16">
-              <el-form-item :label="tdt('threadDumpSearch.searchInput')" prop="term">
-                <el-input
-                  v-model="search.term"
-                  clearable
-                  size="large"
-                  :placeholder="tdt('threadDumpSearch.searchTitle')"
-                  @keydown.enter.prevent="submitSearchForm"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label-width="0">
-                <div style="display: flex; gap: 8px">
-                  <el-button type="primary" size="large" @click="submitSearchForm">
-                    {{ tdt('threadDumpSearch.searchTitle') }}
-                  </el-button>
-                  <el-checkbox v-model="search.advancedVisible" border size="large">
-                    {{ tdt('threadDumpSearch.advancedToggle') }}
-                  </el-checkbox>
-                </div>
-              </el-form-item>
-            </el-col>
-          </el-row>
+  <el-form
+    ref="formRef"
+    :model="search"
+    :rules="rules"
+    label-width="auto"
+    label-position="left"
+    size="small"
+    @submit.prevent="submitSearchForm"
+  >
+    <div class="search-bar">
+      <el-form-item prop="term" class="search-input-item">
+        <el-input
+          v-model="search.term"
+          clearable
+          style="width: 420px"
+          size="default"
+          :placeholder="tdt('threadDumpSearch.searchPlaceholder')"
+        >
+          <template #append>
+              <el-button :icon="Search" @click="submitSearchForm" />
+          </template>
+        </el-input>
+      </el-form-item>
+      <el-button
+        size="default"
+        @click="search.advancedVisible = !search.advancedVisible"
+      >
+        {{ tdt('threadDumpSearch.advancedToggle') }}
+        <el-icon class="toggle-icon" :class="{ 'toggle-icon--expanded': search.advancedVisible }">
+          <ArrowDown />
+        </el-icon>
+      </el-button>
+    </div>
 
-          <el-collapse-transition>
-            <div v-if="search.advancedVisible">
-              <el-row :gutter="20" style="margin-top: 16px">
-                <el-col :span="8">
-                  <el-divider content-position="left">
-                    {{ tdt('threadDumpSearch.searchFields') }}
-                  </el-divider>
-                  <el-form-item :label="tdt('threadDumpSearch.searchFieldName')">
-                    <el-switch v-model="search.searchName" />
-                  </el-form-item>
-                  <el-form-item :label="tdt('threadDumpSearch.searchFieldState')">
-                    <el-switch v-model="search.searchState" />
-                  </el-form-item>
-                  <el-form-item :label="tdt('threadDumpSearch.searchFieldStack')">
-                    <el-switch v-model="search.searchStack" />
-                  </el-form-item>
-                </el-col>
-
-                <el-col :span="10">
-                  <el-divider content-position="left">
-                    {{ tdt('threadDumpSearch.searchOptions') }}
-                  </el-divider>
-                  <el-form-item :label="tdt('threadDumpSearch.searchOptionRegex')">
-                    <el-switch v-model="search.regex" />
-                  </el-form-item>
-                  <el-form-item :label="tdt('threadDumpSearch.searchOptionMatchCase')">
-                    <el-switch v-model="search.matchCase" />
-                  </el-form-item>
-                  <el-form-item :label="tdt('threadDumpSearch.searchOptionThreadStates')">
-                    <el-select
-                      v-model="search.allowedJavaStates"
-                      multiple
-                      :placeholder="tdt('threadDumpSearch.searchOptionThreadStatesPlaceholder')"
-                      style="width: 280px"
-                    >
-                      <el-option
-                        v-for="item in THREAD_STATE_OPTIONS"
-                        :key="item"
-                        :label="item"
-                        :value="item"
-                      />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-              </el-row>
+    <el-collapse-transition>
+      <div v-if="search.advancedVisible" class="advanced-panel">
+        <el-row :gutter="20">
+          <el-col :span="10">
+            <div class="section-title">
+              {{ tdt('threadDumpSearch.matchFields') }}
             </div>
-          </el-collapse-transition>
-        </div>
+            <el-form-item :label="tdt('threadDumpSearch.matchFieldName')">
+              <el-switch v-model="search.searchName" />
+            </el-form-item>
+            <el-form-item :label="tdt('threadDumpSearch.matchFieldState')">
+              <el-switch v-model="search.searchState" />
+            </el-form-item>
+            <el-form-item :label="tdt('threadDumpSearch.matchFieldStack')">
+              <el-switch v-model="search.searchStack" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="14">
+            <div class="section-title">
+              {{ tdt('threadDumpSearch.otherOptions') }}
+            </div>
+            <el-form-item :label="tdt('threadDumpSearch.searchOptionRegex')">
+              <el-switch v-model="search.regex" />
+            </el-form-item>
+            <el-form-item :label="tdt('threadDumpSearch.searchOptionMatchCase')">
+              <el-switch v-model="search.matchCase" />
+            </el-form-item>
+            <el-form-item :label="tdt('threadDumpSearch.searchOptionThreadStates')">
+              <el-select
+                v-model="search.allowedJavaStates"
+                multiple
+                collapse-tags
+                collapse-tags-tooltip
+                :placeholder="tdt('threadDumpSearch.searchOptionThreadStatesPlaceholder')"
+                style="width: 220px"
+              >
+                <el-option
+                  v-for="item in THREAD_STATE_OPTIONS"
+                  :key="item"
+                  :label="item"
+                  :value="item"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </div>
-    </el-form>
-  </el-card>
+    </el-collapse-transition>
+  </el-form>
 </template>
+
+<style scoped>
+.toggle-icon {
+  margin-left: 4px;
+  transition: transform 0.3s;
+}
+
+.toggle-icon--expanded {
+  transform: rotate(180deg);
+}
+
+.search-bar {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.search-input-item {
+  margin-bottom: 0;
+}
+
+.advanced-panel {
+  max-width: 760px;
+  margin: 14px 0 0;
+  padding: 16px 20px 2px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 8px;
+}
+
+.section-title {
+  font-weight: 600;
+  color: var(--el-text-color-regular);
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+</style>
