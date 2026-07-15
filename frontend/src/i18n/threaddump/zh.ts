@@ -16,7 +16,6 @@ export default {
   overview: '概览',
   lockView: '锁视图',
   basicInfo: '基础信息',
-  stateDistributionTitle: "Java 线程状态分布",
   threadSummary: "线程概要",
   time: '时间',
   vmInfo: '虚拟机',

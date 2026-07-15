@@ -16,7 +16,6 @@ export default {
   overview: 'Overview',
   lockView: 'Lock View',
   basicInfo: 'Basic Information',
-  stateDistributionTitle: "Java Thread State Distribution",
   time: 'Time',
   vmInfo: 'VM Information',
   jniRefs: 'JNI References',
