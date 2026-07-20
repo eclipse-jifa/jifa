@@ -355,7 +355,7 @@ public class AnalysisApiArgumentResolverFactory {
             if (element == null) {
                 throw new IllegalArgumentException(key + " is required");
             }
-            if (!element.isJsonPrimitive() || element.getAsJsonPrimitive().isString()) {
+            if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) {
                 throw new IllegalArgumentException(key + " must be the name of a comparison target");
             }
             String name = element.getAsString();
