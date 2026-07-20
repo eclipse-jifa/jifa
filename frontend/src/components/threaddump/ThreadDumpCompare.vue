@@ -289,7 +289,7 @@ onMounted(loadFiles);
                     </div>
                   </template>
                 </el-table-column>
-                <el-table-column :label="file1Name" prop="v1" min-width="220" />
+                <el-table-column :label="file1Name" prop="v1" min-width="220" align="right" />
                 <el-table-column :label="tdt('threadDumpCompare.deltaLabel') ?? 'Δ'" width="130" align="center">
                   <template #default="{ row }">
                     <span v-if="row.extra" class="delta-zero">{{ row.extra }}</span>
@@ -297,7 +297,7 @@ onMounted(loadFiles);
                     <el-tag v-else-if="row.match === false" type="warning" size="small" disable-transitions>{{ tdt('threadDumpCompare.vmInfoMismatch') }}</el-tag>
                   </template>
                 </el-table-column>
-                <el-table-column :label="file2Name" prop="v2" min-width="220" />
+                <el-table-column :label="file2Name" prop="v2" min-width="220" align="right" />
               </el-table>
             </el-collapse-item>
 
