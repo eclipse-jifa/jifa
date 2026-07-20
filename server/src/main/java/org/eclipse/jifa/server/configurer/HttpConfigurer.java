@@ -53,6 +53,7 @@ public class HttpConfigurer extends ConfigurationAccessor implements WebMvcConfi
                     "/heap-dump-analysis/*",
                     "/gc-log-analysis/*",
                     "/thread-dump-analysis/*",
+                    "/thread-dump-compare",
             };
             for (String knowPage : knownPages) {
                 registry.addViewController(knowPage).setViewName(viewName);
