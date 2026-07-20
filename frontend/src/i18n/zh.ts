@@ -46,6 +46,7 @@ export default {
     menu: {
       files: "文件",
       analysisView: "分析视图",
+      threadDumpCompare: "线程 Dump 对比",
     },
 
     serviceUnavailable: {

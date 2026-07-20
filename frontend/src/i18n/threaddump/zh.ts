@@ -57,6 +57,46 @@ export default {
     noCpuData: "该线程快照文件不包含 CPU 使用信息。",
   },
 
+  // ----- CPU 增量对比 -----
+  cpuConsumingThreadsCompareLabel: "CPU 增量对比（两个 Dump）",
+  cpuConsumingThreadsCompare: {
+    selectPrompt: "选择第二个线程 Dump 进行对比",
+    noData: "在两个 Dump 中未找到具有匹配原生线程 ID 和 CPU 数据的线程。",
+    cpuDeltaLabel: "CPU 增量",
+    cpuFirstLabel: "CPU（第一个 Dump）",
+    cpuSecondLabel: "CPU（第二个 Dump）",
+    hours: "小时",
+    minutes: "分钟",
+    seconds: "秒",
+    milliseconds: "毫秒",
+  },
+
+  // ----- 线程 Dump 对比页面 -----
+  threadDumpCompare: {
+    title: "线程 Dump 对比",
+    selectFile1: "第一个 Dump",
+    selectFile2: "第二个 Dump",
+    selectPlaceholder: "选择线程 Dump 文件",
+    compareButton: "对比",
+    basicInfo: "基本信息",
+    timeDiff: "时间差",
+    vmInfoMatch: "VM 一致",
+    vmInfoMismatch: "VM 不同",
+    diagnosis: "诊断",
+    threadSummary: "线程摘要",
+    threadGroupSummary: "线程组摘要",
+    cpuDelta: "CPU 耗时增量",
+    deltaPositive: "增加",
+    deltaNegative: "减少",
+    noFilesSelected: "请选择两个线程 Dump 文件进行对比",
+    dump1Label: "Dump 1",
+    dump2Label: "Dump 2",
+    deltaLabel: "Δ",
+    threadType: "类型",
+    count: "数量",
+    groupName: "线程组",
+  },
+
   // ----- 诊断 -----
   diagnosis: {
     title: "诊断",

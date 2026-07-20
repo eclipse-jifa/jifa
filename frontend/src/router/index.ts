@@ -16,6 +16,8 @@ import Analysis from '@/components/Analysis.vue';
 import Files from '@/components/Files.vue';
 // @ts-ignore
 import NotFound from '@/components/NotFound.vue';
+// @ts-ignore
+import ThreadDumpCompare from '@/components/threaddump/ThreadDumpCompare.vue';
 import { FileType, fileTypeMap } from '@/composables/file-types';
 // @ts-ignore
 import NProgress from 'nprogress';
@@ -38,6 +40,7 @@ declare module 'vue-router' {
 
 const routes: RouteRecordRaw[] = [
   { name: 'Files', path: '/', component: Files },
+  { name: 'ThreadDumpCompare', path: '/thread-dump-compare', component: ThreadDumpCompare },
   { name: 'NotFound', path: '/:pathMatch(.*)', component: NotFound }
 ];
 

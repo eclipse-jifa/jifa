@@ -58,6 +58,46 @@ export default {
     noCpuData: "This thread dump does not contain CPU usage information.",
   },
 
+  // ----- CPU Delta (Compare) -----
+  cpuConsumingThreadsCompareLabel: "CPU Delta (Compare Two Dumps)",
+  cpuConsumingThreadsCompare: {
+    selectPrompt: "Select second thread dump to compare",
+    noData: "No threads with matching native IDs and CPU data found in both dumps.",
+    cpuDeltaLabel: "CPU delta",
+    cpuFirstLabel: "CPU (first dump)",
+    cpuSecondLabel: "CPU (second dump)",
+    hours: "hours",
+    minutes: "minutes",
+    seconds: "seconds",
+    milliseconds: "ms",
+  },
+
+  // ----- Thread Dump Compare Page -----
+  threadDumpCompare: {
+    title: "Thread Dump Compare",
+    selectFile1: "First Dump",
+    selectFile2: "Second Dump",
+    selectPlaceholder: "Select thread dump file",
+    compareButton: "Compare",
+    basicInfo: "Basic Information",
+    timeDiff: "Time difference",
+    vmInfoMatch: "VM matches",
+    vmInfoMismatch: "VM differs",
+    diagnosis: "Diagnosis",
+    threadSummary: "Thread Summary",
+    threadGroupSummary: "Thread Group Summary",
+    cpuDelta: "CPU Time Delta",
+    deltaPositive: "increased",
+    deltaNegative: "decreased",
+    noFilesSelected: "Select two thread dump files to compare",
+    dump1Label: "Dump 1",
+    dump2Label: "Dump 2",
+    deltaLabel: "Δ",
+    threadType: "Type",
+    count: "Count",
+    groupName: "Group",
+  },
+
   // ----- Diagnosis -----
   diagnosis: {
     title: "Diagnosis",
