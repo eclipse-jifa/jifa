@@ -23,6 +23,7 @@ import { tdt } from '@/i18n/i18n';
 import { prettyTime } from '@/support/utils';
 import { stateTagStyle } from '@/components/threaddump/thread-state-colors';
 import CpuConsumingThreadsCompare from '@/components/threaddump/CpuConsumingThreadsCompare.vue';
+import { useRouter } from 'vue-router';
 import {
   Clock,
   CoffeeCup,
@@ -32,7 +33,10 @@ import {
   Operation,
   Platform,
   Promotion,
+  UploadFilled,
 } from '@element-plus/icons-vue';
+
+const router = useRouter();
 
 const { requestWithTarget } = useAnalysisApiRequester();
 
@@ -266,11 +270,23 @@ onMounted(loadFiles);
         </div>
 
         <!-- ── Empty state ──────────────────────────────────────────────── -->
-        <el-empty
-          v-if="!compared && !loading"
-          :description="tdt('threadDumpCompare.noFilesSelected')"
-          style="margin-top: 60px"
-        />
+        <template v-if="!compared && !loading">
+          <!-- No files at all -->
+          <div v-if="!filesLoading && availableFiles.length === 0" class="empty-state">
+            <el-icon class="empty-icon"><UploadFilled /></el-icon>
+            <p class="empty-title">{{ tdt('threadDumpCompare.noFilesAvailable') }}</p>
+            <p class="empty-hint">{{ tdt('threadDumpCompare.noFilesAvailableHint') }}</p>
+            <el-button type="primary" @click="router.push('/')">
+              {{ tdt('threadDumpCompare.uploadNow') }}
+            </el-button>
+          </div>
+          <!-- Files available, nothing selected yet -->
+          <el-empty
+            v-else-if="!filesLoading"
+            :description="tdt('threadDumpCompare.noFilesSelected')"
+            style="margin-top: 60px"
+          />
+        </template>
 
         <!-- ── Results ──────────────────────────────────────────────────── -->
         <div v-if="compared" v-loading="loading">
@@ -373,6 +389,31 @@ onMounted(loadFiles);
   font-size: 1rem;
   font-weight: bold;
   color: var(--el-text-color-secondary);
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 12px;
+  text-align: center;
+}
+.empty-icon {
+  font-size: 64px;
+  color: var(--el-text-color-placeholder);
+}
+.empty-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin: 0;
+}
+.empty-hint {
+  color: var(--el-text-color-secondary);
+  margin: 0;
 }
 
 .col-header {
