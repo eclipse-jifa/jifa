@@ -43,6 +43,7 @@ import org.eclipse.jifa.tda.vo.VBlockingThread;
 import org.eclipse.jifa.tda.vo.VFrame;
 import org.eclipse.jifa.tda.vo.VMonitor;
 import org.eclipse.jifa.tda.vo.VThread;
+import org.eclipse.jifa.tda.vo.VThreadDelta;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -405,6 +406,52 @@ public class ThreadDumpAnalyzer {
                 .limit(max < 0 ? Integer.MAX_VALUE : max)
                 .map(this::convertToVThread)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Computes which threads consumed the most CPU <em>between</em> two thread
+     * dumps by matching threads via their native thread id ({@code nid}).
+     *
+     * <p>Only threads present in both dumps with valid CPU data ({@code cpu > 0})
+     * in the second dump are included. A positive {@code cpuDelta} means the thread
+     * consumed more CPU in the second dump.
+     *
+     * @param other the path of the second (later) thread dump, resolved via the
+     *              comparison-target mechanism (pass {@code uniqueName} from the frontend)
+     * @param type  limit to threads of this type; {@code null} means all types
+     * @param max   maximum number of results; {@code -1} means unlimited
+     * @return threads sorted by CPU delta descending
+     */
+    public List<VThreadDelta> cpuConsumingThreadsCompare(@ApiParameterMeta(comparisonTargetPath = true) Path other,
+                                                          @ApiParameterMeta(required = false) ThreadType type,
+                                                          int max) {
+        ThreadDumpAnalyzer otherAnalyzer = build(other, ProgressListener.NoOpProgressListener);
+        Map<Long, Thread> otherByNid = otherAnalyzer.snapshot.getThreadMap().values().stream()
+                .collect(Collectors.toMap(Thread::getNid, t -> t, (a, b) -> a));
+
+        int limit = max < 0 ? Integer.MAX_VALUE : max;
+        List<VThreadDelta> result = new ArrayList<>();
+
+        for (Thread first : snapshot.getThreadMap().values()) {
+            if (type != null && first.getType() != type) {
+                continue;
+            }
+            Thread second = otherByNid.get(first.getNid());
+            if (second == null || second.getCpu() <= 0) {
+                continue;
+            }
+            double delta = second.getCpu() - first.getCpu();
+            result.add(new VThreadDelta(first.getId(), first.getName(),
+                                        first.getCpu() > 0 ? first.getCpu() : 0,
+                                        second.getCpu(),
+                                        delta));
+        }
+
+        result.sort(Comparator.comparingDouble(VThreadDelta::getCpuDelta).reversed());
+        if (result.size() > limit) {
+            result = result.subList(0, limit);
+        }
+        return result;
     }
 
     /**
