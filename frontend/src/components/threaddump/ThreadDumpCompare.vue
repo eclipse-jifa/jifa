@@ -275,48 +275,13 @@ onMounted(loadFiles);
         <!-- ── Results ──────────────────────────────────────────────────── -->
         <div v-if="compared" v-loading="loading">
 
-          <!-- Column headers -->
-          <div class="col-header">
-            <span class="col-label"></span>
-            <span class="col-dump dump1-head" :title="file1Name">{{ file1Name }}</span>
-            <span class="col-delta">{{ tdt('threadDumpCompare.deltaLabel') }}</span>
-            <span class="col-dump dump2-head" :title="file2Name">{{ file2Name }}</span>
-          </div>
-
           <!-- All sections in one collapse -->
           <el-collapse :model-value="['basic', 'summary', 'groups', 'cpu']">
 
             <!-- Basic Information -->
             <el-collapse-item name="basic" :title="tdt('threadDumpCompare.basicInfo')">
-              <el-table :data="basicRows" :show-header="false" stripe>
-                <el-table-column width="36">
-                  <template #default="{ row }">
-                    <el-icon><component :is="row.icon" /></el-icon>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="label" min-width="120" />
-                <el-table-column prop="v1" min-width="200" />
-                <el-table-column min-width="80" align="center">
-                  <template #default="{ row }">
-                    <span v-if="row.extra" class="delta-zero">{{ row.extra }}</span>
-                    <el-tag
-                      v-else-if="row.match === true"
-                      type="success" size="small" disable-transitions
-                    >{{ tdt('threadDumpCompare.vmInfoMatch') }}</el-tag>
-                    <el-tag
-                      v-else-if="row.match === false"
-                      type="warning" size="small" disable-transitions
-                    >{{ tdt('threadDumpCompare.vmInfoMismatch') }}</el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="v2" min-width="200" />
-              </el-table>
-            </el-collapse-item>
-
-          <!-- Thread Summary -->
-            <el-collapse-item name="summary" :title="tdt('threadDumpCompare.threadSummary')">
-              <el-table :data="threadRows" :show-header="true" stripe>
-                <el-table-column :label="tdt('threadDumpCompare.threadType') ?? 'Type'" min-width="120">
+              <el-table :data="basicRows" :show-header="true" stripe>
+                <el-table-column :label="tdt('threadDumpCompare.basicInfo') ?? ''" min-width="200">
                   <template #default="{ row }">
                     <div style="display:flex;align-items:center;gap:6px">
                       <el-icon><component :is="row.icon" /></el-icon>
@@ -324,27 +289,50 @@ onMounted(loadFiles);
                     </div>
                   </template>
                 </el-table-column>
-                <el-table-column :label="file1Name" prop="count1" align="right" min-width="100" />
-                <el-table-column :label="tdt('threadDumpCompare.deltaLabel') ?? 'Δ'" align="center" min-width="80">
+                <el-table-column :label="file1Name" prop="v1" min-width="220" />
+                <el-table-column :label="tdt('threadDumpCompare.deltaLabel') ?? 'Δ'" width="130" align="center">
+                  <template #default="{ row }">
+                    <span v-if="row.extra" class="delta-zero">{{ row.extra }}</span>
+                    <el-tag v-else-if="row.match === true"  type="success" size="small" disable-transitions>{{ tdt('threadDumpCompare.vmInfoMatch') }}</el-tag>
+                    <el-tag v-else-if="row.match === false" type="warning" size="small" disable-transitions>{{ tdt('threadDumpCompare.vmInfoMismatch') }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column :label="file2Name" prop="v2" min-width="220" />
+              </el-table>
+            </el-collapse-item>
+
+          <!-- Thread Summary -->
+            <el-collapse-item name="summary" :title="tdt('threadDumpCompare.threadSummary')">
+              <el-table :data="threadRows" :show-header="true" stripe>
+                <el-table-column :label="tdt('threadDumpCompare.threadType') ?? 'Type'" min-width="200">
+                  <template #default="{ row }">
+                    <div style="display:flex;align-items:center;gap:6px">
+                      <el-icon><component :is="row.icon" /></el-icon>
+                      {{ row.label }}
+                    </div>
+                  </template>
+                </el-table-column>
+                <el-table-column :label="file1Name" prop="count1" align="right" min-width="220" />
+                <el-table-column :label="tdt('threadDumpCompare.deltaLabel') ?? 'Δ'" align="center" width="130">
                   <template #default="{ row }">
                     <span :class="deltaClass(row.delta)">{{ deltaText(row.delta) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column :label="file2Name" prop="count2" align="right" min-width="100" />
+                <el-table-column :label="file2Name" prop="count2" align="right" min-width="220" />
               </el-table>
             </el-collapse-item>
 
             <!-- Thread Groups -->
             <el-collapse-item name="groups" :title="tdt('threadDumpCompare.threadGroupSummary')">
               <el-table :data="groupRows" :show-header="true" stripe>
-                <el-table-column :label="tdt('threadDumpCompare.groupName') ?? 'Group'" prop="name" min-width="220" />
-                <el-table-column :label="file1Name" prop="count1" align="right" min-width="80" />
-                <el-table-column :label="tdt('threadDumpCompare.deltaLabel') ?? 'Δ'" align="center" min-width="80">
+                <el-table-column :label="tdt('threadDumpCompare.groupName') ?? 'Group'" prop="name" min-width="200" />
+                <el-table-column :label="file1Name" prop="count1" align="right" min-width="220" />
+                <el-table-column :label="tdt('threadDumpCompare.deltaLabel') ?? 'Δ'" align="center" width="130">
                   <template #default="{ row }">
                     <span :class="deltaClass(row.delta)">{{ deltaText(row.delta) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column :label="file2Name" prop="count2" align="right" min-width="80">
+                <el-table-column :label="file2Name" prop="count2" align="right" min-width="220">
                   <template #default="{ row }">
                     <span :class="row.count1 === 0 ? 'new-group' : ''">{{ row.count2 }}</span>
                   </template>
