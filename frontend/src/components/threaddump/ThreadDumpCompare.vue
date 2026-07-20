@@ -283,39 +283,37 @@ onMounted(loadFiles);
             <span class="col-dump dump2-head" :title="file2Name">{{ file2Name }}</span>
           </div>
 
-          <!-- Basic Information -->
-          <el-collapse-item-like :title="tdt('threadDumpCompare.basicInfo')">
-            <el-collapse :model-value="['basic']">
-              <el-collapse-item name="basic" :title="tdt('threadDumpCompare.basicInfo')">
-                <el-table :data="basicRows" :show-header="false" stripe>
-                  <el-table-column width="36">
-                    <template #default="{ row }">
-                      <el-icon><component :is="row.icon" /></el-icon>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="label" min-width="120" />
-                  <el-table-column prop="v1" min-width="200" />
-                  <el-table-column min-width="80" align="center">
-                    <template #default="{ row }">
-                      <span v-if="row.extra" class="delta-zero">{{ row.extra }}</span>
-                      <el-tag
-                        v-else-if="row.match === true"
-                        type="success" size="small" disable-transitions
-                      >{{ tdt('threadDumpCompare.vmInfoMatch') }}</el-tag>
-                      <el-tag
-                        v-else-if="row.match === false"
-                        type="warning" size="small" disable-transitions
-                      >{{ tdt('threadDumpCompare.vmInfoMismatch') }}</el-tag>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="v2" min-width="200" />
-                </el-table>
-              </el-collapse-item>
-            </el-collapse>
-          </el-collapse-item-like>
+          <!-- All sections in one collapse -->
+          <el-collapse :model-value="['basic', 'summary', 'groups', 'cpu']">
+
+            <!-- Basic Information -->
+            <el-collapse-item name="basic" :title="tdt('threadDumpCompare.basicInfo')">
+              <el-table :data="basicRows" :show-header="false" stripe>
+                <el-table-column width="36">
+                  <template #default="{ row }">
+                    <el-icon><component :is="row.icon" /></el-icon>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="label" min-width="120" />
+                <el-table-column prop="v1" min-width="200" />
+                <el-table-column min-width="80" align="center">
+                  <template #default="{ row }">
+                    <span v-if="row.extra" class="delta-zero">{{ row.extra }}</span>
+                    <el-tag
+                      v-else-if="row.match === true"
+                      type="success" size="small" disable-transitions
+                    >{{ tdt('threadDumpCompare.vmInfoMatch') }}</el-tag>
+                    <el-tag
+                      v-else-if="row.match === false"
+                      type="warning" size="small" disable-transitions
+                    >{{ tdt('threadDumpCompare.vmInfoMismatch') }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="v2" min-width="200" />
+              </el-table>
+            </el-collapse-item>
 
           <!-- Thread Summary -->
-          <el-collapse :model-value="['summary', 'groups', 'cpu']">
             <el-collapse-item name="summary" :title="tdt('threadDumpCompare.threadSummary')">
               <el-table :data="threadRows" :show-header="true" stripe>
                 <el-table-column :label="tdt('threadDumpCompare.threadType') ?? 'Type'" min-width="120">
