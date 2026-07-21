@@ -64,17 +64,23 @@ const rows = computed((): StateRow[] => {
 
 <template>
   <div>
-    <el-table v-if="rows.length > 0" :data="rows" stripe>
+    <el-table v-if="rows.length > 0" :data="rows" stripe max-height="400">
       <el-table-column :label="tdt('stateDistributionCompare.state') ?? 'State'" prop="state" min-width="200" />
       <el-table-column :label="dump1Name" prop="count1" align="right" min-width="220" />
       <el-table-column :label="tdt('stateDistributionCompare.delta') ?? 'Δ'" align="center" width="130">
         <template #default="{ row }">
-          <span :class="deltaClass(row.delta)">{{ deltaText(row.delta) }}</span>
+          <span :class="deltaClass(row.delta, true)">{{ deltaText(row.delta) }}</span>
         </template>
       </el-table-column>
       <el-table-column :label="dump2Name" prop="count2" align="right" min-width="220" />
     </el-table>
-    <el-empty v-else :description="tdt('stateDistributionCompare.noData')" />
+    <el-empty v-else :description="tdt('stateDistributionCompare.noData')">
+      <template #image>
+        <div style="font-size: 48px; color: var(--el-color-success);">
+          ✓
+        </div>
+      </template>
+    </el-empty>
   </div>
 </template>
 

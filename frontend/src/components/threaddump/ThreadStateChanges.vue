@@ -119,7 +119,7 @@ onMounted(load);
         <el-table-column :label="dump1Name" prop="count1" align="right" min-width="220" />
         <el-table-column :label="tdt('threadStateChanges.delta') ?? 'Δ'" align="center" width="130">
           <template #default="{ row }">
-            <span :class="deltaClass(row.delta)">{{ deltaText(row.delta) }}</span>
+            <span :class="deltaClass(row.delta, true)">{{ deltaText(row.delta) }}</span>
           </template>
         </el-table-column>
         <el-table-column :label="dump2Name" prop="count2" align="right" min-width="220" />
@@ -129,7 +129,7 @@ onMounted(load);
 
       <template v-if="stateChanged.length > 0">
         <h4>{{ tdt('threadStateChanges.transitionsTitle') ?? 'State transition breakdown' }}</h4>
-        <el-table :data="transitionRows" stripe :max-height="280">
+        <el-table :data="transitionRows" stripe max-height="400">
         <el-table-column :label="tdt('threadStateChanges.stateBefore')" min-width="220">
           <template #default="{ row }">
             <el-tag :style="tagStyle(row.from)" size="small" disable-transitions>{{ row.from }}</el-tag>
@@ -144,7 +144,13 @@ onMounted(load);
           <el-table-column :label="tdt('threadStateChanges.count') ?? 'Count'" prop="count" width="120" align="right" />
         </el-table>
       </template>
-      <el-empty v-else :description="tdt('threadStateChanges.noChanges')" />
+      <el-empty v-else :description="tdt('threadStateChanges.noChanges')">
+        <template #image>
+          <div style="font-size: 48px; color: var(--el-color-success);">
+            ✓
+          </div>
+        </template>
+      </el-empty>
     </template>
   </div>
 </template>

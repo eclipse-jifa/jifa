@@ -157,7 +157,7 @@ onMounted(load);
 
       <template v-if="blockedThreads.length > 0">
         <h4>{{ tdt('persistentBlockers.detailsTitle') ?? 'Threads blocked in both dumps' }}</h4>
-        <el-table :data="blockedThreads" stripe :max-height="320">
+        <el-table :data="blockedThreads" stripe max-height="400">
         <el-table-column :label="tdt('persistentBlockers.thread')" prop="name" min-width="320" show-overflow-tooltip />
         <el-table-column :label="tdt('persistentBlockers.actions')" width="120" align="center">
           <template #default="{ row }">

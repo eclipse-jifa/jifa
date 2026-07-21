@@ -342,7 +342,7 @@ onMounted(async () => {
                 <el-table-column :label="file1Name" prop="count1" align="right" min-width="220" />
                 <el-table-column :label="tdt('threadDumpCompare.deltaLabel') ?? 'Δ'" align="center" width="130">
                   <template #default="{ row }">
-                    <span :class="deltaClass(row.delta)">{{ deltaText(row.delta) }}</span>
+                    <span :class="deltaClass(row.delta, true)">{{ deltaText(row.delta) }}</span>
                   </template>
                 </el-table-column>
                 <el-table-column :label="file2Name" prop="count2" align="right" min-width="220" />
@@ -356,7 +356,7 @@ onMounted(async () => {
                 <el-table-column :label="file1Name" prop="count1" align="right" min-width="220" />
                 <el-table-column :label="tdt('threadDumpCompare.deltaLabel') ?? 'Δ'" align="center" width="130">
                   <template #default="{ row }">
-                    <span :class="deltaClass(row.delta)">{{ deltaText(row.delta) }}</span>
+                    <span :class="deltaClass(row.delta, true)">{{ deltaText(row.delta) }}</span>
                   </template>
                 </el-table-column>
                 <el-table-column :label="file2Name" prop="count2" align="right" min-width="220">
@@ -452,9 +452,10 @@ onMounted(async () => {
 }
 
 /* Delta colors */
-:deep(.delta-pos)  { color: var(--el-color-danger);  font-weight: bold; }
-:deep(.delta-neg)  { color: var(--el-color-success); font-weight: bold; }
-:deep(.delta-zero) { color: var(--el-text-color-secondary); }
+:deep(.delta-pos) { color: var(--el-color-danger); font-weight: bold; }
+:deep(.delta-neg) { color: var(--el-color-success); font-weight: bold; }
+:deep(.delta-neutral-pos) { color: var(--el-color-primary); font-weight: bold; }
+:deep(.delta-neutral-neg) { color: var(--el-color-warning); font-weight: bold; }
 
 /* New group highlight */
 :deep(.new-group) { color: var(--el-color-primary); font-style: italic; }

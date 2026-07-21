@@ -65,9 +65,9 @@ export function stateTagStyle(state: string): Record<string, string> {
 
 // ── Delta helpers (shared across all compare components) ─────────────────────
 
-export function deltaClass(d: number): string {
-  if (d > 0) return 'delta-pos';
-  if (d < 0) return 'delta-neg';
+export function deltaClass(d: number, isNeutral: boolean = false): string {
+  if (d > 0) return isNeutral ? 'delta-neutral-pos' : 'delta-pos';
+  if (d < 0) return isNeutral ? 'delta-neutral-neg' : 'delta-neg';
   return 'delta-zero';
 }
 
