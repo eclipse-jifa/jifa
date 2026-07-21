@@ -191,7 +191,7 @@ onMounted(load);
       </el-table-column>
 
       <!-- Dump 1 cell -->
-      <el-table-column :label="dump1Name" min-width="220">
+      <el-table-column :label="dump1Name" min-width="220" align="right">
         <template #default="{ row }">
           <div class="cell-content">
             <el-icon :style="severityStyle(row.dump1)" style="flex-shrink:0">
@@ -217,7 +217,7 @@ onMounted(load);
       </el-table-column>
 
       <!-- Dump 2 cell -->
-      <el-table-column :label="dump2Name" min-width="220">
+      <el-table-column :label="dump2Name" min-width="220" align="right">
         <template #default="{ row }">
           <div class="cell-content">
             <el-icon :style="severityStyle(row.dump2)" style="flex-shrink:0">
