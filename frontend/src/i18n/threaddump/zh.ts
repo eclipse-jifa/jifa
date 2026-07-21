@@ -59,7 +59,6 @@ export default {
   },
 
   // ----- CPU 增量对比 -----
-  cpuConsumingThreadsCompareLabel: "CPU 增量对比（两个 Dump）",
   cpuConsumingThreadsCompare: {
     selectPrompt: "选择第二个线程 Dump 进行对比",
     noData: "在两个 Dump 中未找到具有匹配原生线程 ID 和 CPU 数据的线程。",
@@ -86,7 +85,7 @@ export default {
     diagnosis: "诊断",
     threadSummary: "线程摘要",
     threadGroupSummary: "线程组摘要",
-    cpuDelta: "CPU 耗时增量",
+    cpuDelta: "CPU 增量",
     stateDistribution: "状态分布",
     stateChanges: "线程状态变化",
     persistentBlockers: "持续阻塞线程（两个 Dump 均阻塞）",

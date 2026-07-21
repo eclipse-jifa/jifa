@@ -60,7 +60,6 @@ export default {
   },
 
   // ----- CPU Delta (Compare) -----
-  cpuConsumingThreadsCompareLabel: "CPU Delta (Compare Two Dumps)",
   cpuConsumingThreadsCompare: {
     selectPrompt: "Select second thread dump to compare",
     noData: "No threads with matching native IDs and CPU data found in both dumps.",
@@ -87,7 +86,7 @@ export default {
     diagnosis: "Diagnosis",
     threadSummary: "Thread Summary",
     threadGroupSummary: "Thread Group Summary",
-    cpuDelta: "CPU Time Delta",
+    cpuDelta: "CPU Delta",
     stateDistribution: "State Distribution",
     stateChanges: "Thread State Changes",
     persistentBlockers: "Persistent Blockers (blocked in both dumps)",

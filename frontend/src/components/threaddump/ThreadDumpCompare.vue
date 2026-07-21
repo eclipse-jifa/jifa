@@ -293,17 +293,7 @@ onMounted(async () => {
         <div v-if="compared" v-loading="loading">
 
           <!-- All sections in one collapse -->
-          <el-collapse :model-value="['diagnosis', 'basic', 'summary', 'groups', 'states', 'stateChanges', 'blockers', 'cpu']">
-
-            <!-- Diagnosis -->
-            <el-collapse-item name="diagnosis" :title="tdt('threadDumpCompare.diagnosis')">
-              <DiagnoseCompare
-                :file1="file1"
-                :file2="file2"
-                :dump1-name="file1Name"
-                :dump2-name="file2Name"
-              />
-            </el-collapse-item>
+          <el-collapse :model-value="['basic', 'diagnosis', 'summary', 'groups', 'states', 'stateChanges', 'blockers', 'cpu']">
 
             <!-- Basic Information -->
             <el-collapse-item name="basic" :title="tdt('threadDumpCompare.basicInfo')">
@@ -326,6 +316,16 @@ onMounted(async () => {
                 </el-table-column>
                 <el-table-column :label="file2Name" prop="v2" min-width="220" align="right" />
               </el-table>
+            </el-collapse-item>
+
+            <!-- Diagnosis -->
+            <el-collapse-item name="diagnosis" :title="tdt('threadDumpCompare.diagnosis')">
+              <DiagnoseCompare
+                :file1="file1"
+                :file2="file2"
+                :dump1-name="file1Name"
+                :dump2-name="file2Name"
+              />
             </el-collapse-item>
 
           <!-- Thread Summary -->

@@ -6,15 +6,7 @@
 
     This program and the accompanying materials are made available under the
     terms of the Eclipse Public License 2.0 which is available at
-    http://w              <el-collapse-item name="cpuConsumingThreads" :title="tdt('cpuConsumingThreadsLabel')">
-            <CpuConsumingThreads />
-          </el-collapse-item>
-
-          <el-collapse-item name="threadSearch" :title="tdt('threadDumpSearch.label')">`-collapse-item name="cpuConsumingThreads" :title="tdt('cpuConsumingThreadsLabel')">
-            <CpuConsumingThreads />
-          </el-collapse-item>
-
-          <el-collapse-item name="threadSearch" :title="tdt('threadDumpSearch.label')">`e.org/legal/epl-2.0
+    http://www.eclipse.org/legal/epl-2.0
 
     SPDX-License-Identifier: EPL-2.0
  -->
@@ -367,10 +359,6 @@ function buildThreadStat(key, states, counts, icon, threadType?) {
 
           <el-collapse-item name="cpuConsumingThreads" :title="tdt('cpuConsumingThreadsLabel')">
             <CpuConsumingThreads />
-          </el-collapse-item>
-
-          <el-collapse-item name="cpuConsumingThreadsCompare" :title="tdt('cpuConsumingThreadsCompareLabel')">
-            <CpuConsumingThreadsCompare />
           </el-collapse-item>
 
           <el-collapse-item name="threadSearch" :title="tdt('threadDumpSearch.label')">
