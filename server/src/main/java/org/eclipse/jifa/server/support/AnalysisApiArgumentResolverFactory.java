@@ -135,7 +135,7 @@ public class AnalysisApiArgumentResolverFactory {
                                                   return new TargetPathResolver(name);
                                               } else {
                                                   assert comparisonTargetPath;
-                                                  return new ComparisonPathResolver(name);
+                                                  return new ComparisonPathResolver(name, required);
                                               }
                                           } else {
                                               Class<?> raw;
@@ -345,14 +345,17 @@ public class AnalysisApiArgumentResolverFactory {
 
     static class ComparisonPathResolver extends LeafResolver<Path> {
 
-        ComparisonPathResolver(String name) {
-            super(name, true);
+        ComparisonPathResolver(String name, boolean required) {
+            super(name, required);
         }
 
         @Override
         Path resolve(AnalysisApiArgumentContext context) {
             JsonElement element = context.paramJson().get(key);
-            if (element == null) {
+            if (element == null || element instanceof JsonNull) {
+                if (!required) {
+                    return null;
+                }
                 throw new IllegalArgumentException(key + " is required");
             }
             if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) {
