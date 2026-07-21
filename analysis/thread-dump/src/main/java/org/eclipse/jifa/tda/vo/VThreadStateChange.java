@@ -34,7 +34,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class VThreadStateChange {
 
-    /** Internal thread id (from the first dump; -1 for threads only in dump 2). */
+    /** Native thread ID from the first dump; -1 for threads only in dump 2. */
     private int id;
 
     private String name;
@@ -50,12 +50,4 @@ public class VThreadStateChange {
      * {@code null} if the thread no longer exists in dump 2 (disappeared thread).
      */
     private String stateAfter;
-
-    /**
-     * Convenience: returns {@code true} if this entry represents a thread that
-     * actually changed state (as opposed to appearing or disappearing).
-     */
-    public boolean isStateChanged() {
-        return stateBefore != null && stateAfter != null && !stateBefore.equals(stateAfter);
-    }
 }

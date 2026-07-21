@@ -24,6 +24,7 @@ import org.eclipse.jifa.common.util.PageViewBuilder;
 import org.eclipse.jifa.tda.diagnoser.Diagnostic;
 import org.eclipse.jifa.tda.diagnoser.ThreadDumpAnalysisConfig;
 import org.eclipse.jifa.tda.diagnoser.ThreadDumpDiagnoser;
+import org.eclipse.jifa.tda.enums.JavaThreadState;
 import org.eclipse.jifa.tda.enums.MonitorState;
 import org.eclipse.jifa.tda.enums.ThreadType;
 import org.eclipse.jifa.tda.model.CallSiteTree;
@@ -57,6 +58,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -718,7 +720,7 @@ public class ThreadDumpAnalyzer {
             }
         }
 
-        // Sort: changed first, then disappeared, then new; within groups by name
+        // Sort: changed first, then new (appeared), then disappeared; within groups by name
         result.sort(Comparator
                 .<VThreadStateChange, Integer>comparing(e -> {
                     if (e.getStateBefore() != null && e.getStateAfter() != null) return 0; // changed
@@ -747,12 +749,12 @@ public class ThreadDumpAnalyzer {
         ThreadDumpAnalyzer otherAnalyzer = build(other, ProgressListener.NoOpProgressListener);
 
         Set<Long> blockedNidsInSecond = otherAnalyzer.snapshot.getJavaThreads().stream()
-                .filter(t -> t.getJavaThreadState() == org.eclipse.jifa.tda.enums.JavaThreadState.BLOCKED_ON_MONITOR_ENTER)
+                .filter(t -> t.getJavaThreadState() == JavaThreadState.BLOCKED_ON_MONITOR_ENTER)
                 .map(Thread::getNid)
                 .collect(Collectors.toCollection(HashSet::new));
 
         return snapshot.getJavaThreads().stream()
-                .filter(t -> t.getJavaThreadState() == org.eclipse.jifa.tda.enums.JavaThreadState.BLOCKED_ON_MONITOR_ENTER)
+                .filter(t -> t.getJavaThreadState() == JavaThreadState.BLOCKED_ON_MONITOR_ENTER)
                 .filter(t -> blockedNidsInSecond.contains(t.getNid()))
                 .sorted(Comparator.comparing(Thread::getName))
                 .map(this::convertToVThread)
@@ -812,7 +814,7 @@ public class ThreadDumpAnalyzer {
         // ── Collect all NIDs across all dumps ─────────────────────────────────
         // NID → [name, state in dump 0, state in dump 1, ...]
         // Use LinkedHashMap to preserve insertion order (primary dump first)
-        Map<Long, String[]> matrix = new java.util.LinkedHashMap<>();
+        Map<Long, String[]> matrix = new LinkedHashMap<>();
 
         for (int i = 0; i < n; i++) {
             for (JavaThread t : analyzers.get(i).snapshot.getJavaThreads()) {
@@ -835,7 +837,7 @@ public class ThreadDumpAnalyzer {
         }
 
         // ── Build ThreadRow list ──────────────────────────────────────────────
-        final String BLOCKED = String.valueOf(org.eclipse.jifa.tda.enums.JavaThreadState.BLOCKED_ON_MONITOR_ENTER);
+        final String BLOCKED = String.valueOf(JavaThreadState.BLOCKED_ON_MONITOR_ENTER);
         List<VMultiDumpComparison.ThreadRow> rows = new ArrayList<>();
 
         for (String[] cells : matrix.values()) {

@@ -180,7 +180,7 @@ onUnmounted(() => {
       :description="tdt('cpuConsumingThreadsCompare.noData')"
     />
     <el-dialog v-model="threadDialogVisible" width="80%" destroy-on-close>
-      <Thread :ids="selectedThreadId != null ? [selectedThreadId] : []" />
+      <Thread :ids="selectedThreadId != null ? [selectedThreadId] : []" :target="file1" />
     </el-dialog>
   </div>
 </template>
