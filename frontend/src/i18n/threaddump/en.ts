@@ -104,6 +104,23 @@ export default {
     groupName: "Group",
   },
 
+  // ----- Diagnosis Compare -----
+  diagnoseCompare: {
+    issue: "Issue",
+    noIssue: "✓ No issue",
+    new: "New",
+    resolved: "Resolved",
+    // Human-readable short labels for each issue type (used as row label)
+    issueType: {
+      DEADLOCK:                  "Deadlock",
+      HIGH_BLOCKED_THREAD_COUNT: "Blocked threads",
+      HIGH_THREAD_COUNT:         "High thread count",
+      HIGH_STACK_SIZE:           "Large stack",
+      HIGH_CPU_RATIO:            "High CPU ratio",
+      THREAD_THROWING_EXCEPTION: "Exception throwing",
+    },
+  },
+
   // ----- Diagnosis -----
   diagnosis: {
     title: "Diagnosis",
