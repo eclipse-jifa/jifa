@@ -87,6 +87,9 @@ export default {
     threadSummary: "Thread Summary",
     threadGroupSummary: "Thread Group Summary",
     cpuDelta: "CPU Time Delta",
+    stateDistribution: "State Distribution",
+    stateChanges: "Thread State Changes",
+    persistentBlockers: "Persistent Blockers (blocked in both dumps)",
     deltaPositive: "increased",
     deltaNegative: "decreased",
     noFilesSelected: "Select two thread dump files to compare",
@@ -171,4 +174,50 @@ export default {
     elapsedLabel: "Elapsed",
   },
 
+  // ----- State Distribution Compare -----
+  stateDistributionCompare: {
+    state: "State",
+    delta: "Δ",
+    noData: "No thread state data available.",
+  },
+
+  // ----- Thread State Changes -----
+  threadStateChanges: {
+    changeType: "Change type",
+    dump1Impact: "Dump 1",
+    dump2Impact: "Dump 2",
+    delta: "Δ",
+    transitionsTitle: "State transition breakdown",
+    count: "Count",
+    summaryChanged: "State changed",
+    summaryDisappeared: "Disappeared",
+    summaryNew: "New in second dump",
+    tabChanged: "State Changed",
+    tabDisappeared: "Disappeared",
+    tabNew: "New",
+    thread: "Thread",
+    stateBefore: "State (Dump 1)",
+    stateAfter: "State (Dump 2)",
+    noChanges: "No threads changed state between the two dumps.",
+    noDisappeared: "No threads disappeared between the two dumps.",
+    noNew: "No new threads appeared in the second dump.",
+  },
+
+  // ----- Persistent Blockers -----
+  persistentBlockers: {
+    warningTitle: "1 thread was blocked in both dumps | {count} threads were blocked in both dumps",
+    summaryType: "Type",
+    dump1: "Dump 1",
+    dump2: "Dump 2",
+    delta: "Δ",
+    allBlocked: "Blocked threads (all)",
+    persistentOnly: "Blocked in both dumps",
+    resolved: "Resolved blockers",
+    introduced: "New blockers in dump 2",
+    detailsTitle: "Threads blocked in both dumps",
+    thread: "Thread",
+    actions: "Actions",
+    inspect: "Inspect",
+    noPersistentBlockers: "No threads were blocked in both dumps – no persistent contention detected.",
+  },
 }

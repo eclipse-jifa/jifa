@@ -44,6 +44,7 @@ import org.eclipse.jifa.tda.vo.VFrame;
 import org.eclipse.jifa.tda.vo.VMonitor;
 import org.eclipse.jifa.tda.vo.VThread;
 import org.eclipse.jifa.tda.vo.VThreadDelta;
+import org.eclipse.jifa.tda.vo.VThreadStateChange;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -54,9 +55,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -655,5 +658,103 @@ public class ThreadDumpAnalyzer {
                           || m.getState() == MonitorState.WAITING_TO_RE_LOCK)
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * Compares the Java thread states of threads present in both dumps by
+     * matching via native thread id (nid) and returns entries for:
+     * <ul>
+     *   <li>Threads whose Java state <em>changed</em> between the two dumps.</li>
+     *   <li>Threads that are new in the second dump (not present in the first).</li>
+     *   <li>Threads that disappeared (present in the first but not in the second).</li>
+     * </ul>
+     * Non-Java threads (without a Java state) are excluded.
+     *
+     * @param other the path of the second (later) thread dump
+     * @return list sorted by: state-changed first, then new, then disappeared;
+     *         within each group sorted by thread name
+     */
+    public List<VThreadStateChange> threadStateChanges(
+            @ApiParameterMeta(comparisonTargetPath = true) Path other) {
+        if (other == null) {
+            throw new IllegalArgumentException("other must not be null");
+        }
+        ThreadDumpAnalyzer otherAnalyzer = build(other, ProgressListener.NoOpProgressListener);
+
+        Map<Long, JavaThread> firstByNid = snapshot.getJavaThreads().stream()
+                .collect(Collectors.toMap(Thread::getNid, t -> t, (a, b) -> a));
+        Map<Long, JavaThread> secondByNid = otherAnalyzer.snapshot.getJavaThreads().stream()
+                .collect(Collectors.toMap(Thread::getNid, t -> t, (a, b) -> a));
+
+        List<VThreadStateChange> result = new ArrayList<>();
+
+        // Threads present in both dumps
+        for (JavaThread first : snapshot.getJavaThreads()) {
+            if (first.getJavaThreadState() == null) continue;
+            JavaThread second = secondByNid.get(first.getNid());
+            if (second == null) {
+                // disappeared
+                result.add(new VThreadStateChange(
+                        first.getId(), first.getName(),
+                        String.valueOf(first.getJavaThreadState()), null));
+            } else if (second.getJavaThreadState() != null
+                    && first.getJavaThreadState() != second.getJavaThreadState()) {
+                // state changed
+                result.add(new VThreadStateChange(
+                        first.getId(), first.getName(),
+                        String.valueOf(first.getJavaThreadState()),
+                        String.valueOf(second.getJavaThreadState())));
+            }
+        }
+
+        // Threads only in the second dump (new threads)
+        for (JavaThread second : otherAnalyzer.snapshot.getJavaThreads()) {
+            if (second.getJavaThreadState() == null) continue;
+            if (!firstByNid.containsKey(second.getNid())) {
+                result.add(new VThreadStateChange(
+                        -1, second.getName(),
+                        null, String.valueOf(second.getJavaThreadState())));
+            }
+        }
+
+        // Sort: changed first, then disappeared, then new; within groups by name
+        result.sort(Comparator
+                .<VThreadStateChange, Integer>comparing(e -> {
+                    if (e.getStateBefore() != null && e.getStateAfter() != null) return 0; // changed
+                    if (e.getStateAfter() == null) return 1;                               // disappeared
+                    return 2;                                                               // new
+                })
+                .thenComparing(VThreadStateChange::getName));
+        return result;
+    }
+
+    /**
+     * Returns threads that are blocked on a monitor ({@code BLOCKED_ON_MONITOR_ENTER})
+     * in <em>both</em> dumps, matched via native thread id (nid).
+     * <p>
+     * A thread appearing in this list is a persistent blocker — it was not just
+     * briefly contended but still blocked when the second dump was taken.
+     *
+     * @param other the path of the second (later) thread dump
+     * @return threads blocked in both dumps, sorted by thread name
+     */
+    public List<VThread> persistentBlockers(
+            @ApiParameterMeta(comparisonTargetPath = true) Path other) {
+        if (other == null) {
+            throw new IllegalArgumentException("other must not be null");
+        }
+        ThreadDumpAnalyzer otherAnalyzer = build(other, ProgressListener.NoOpProgressListener);
+
+        Set<Long> blockedNidsInSecond = otherAnalyzer.snapshot.getJavaThreads().stream()
+                .filter(t -> t.getJavaThreadState() == org.eclipse.jifa.tda.enums.JavaThreadState.BLOCKED_ON_MONITOR_ENTER)
+                .map(Thread::getNid)
+                .collect(Collectors.toCollection(HashSet::new));
+
+        return snapshot.getJavaThreads().stream()
+                .filter(t -> t.getJavaThreadState() == org.eclipse.jifa.tda.enums.JavaThreadState.BLOCKED_ON_MONITOR_ENTER)
+                .filter(t -> blockedNidsInSecond.contains(t.getNid()))
+                .sorted(Comparator.comparing(Thread::getName))
+                .map(this::convertToVThread)
+                .collect(Collectors.toList());
     }
 }

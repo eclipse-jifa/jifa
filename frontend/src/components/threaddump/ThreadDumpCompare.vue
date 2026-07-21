@@ -21,8 +21,11 @@ import { useAnalysisApiRequester } from '@/composables/analysis-api-requester';
 import { THREAD_DUMP } from '@/composables/file-types';
 import { tdt } from '@/i18n/i18n';
 import { prettyTime } from '@/support/utils';
-import { stateTagStyle } from '@/components/threaddump/thread-state-colors';
 import CpuConsumingThreadsCompare from '@/components/threaddump/CpuConsumingThreadsCompare.vue';
+import StateDistributionCompare from '@/components/threaddump/StateDistributionCompare.vue';
+import ThreadStateChanges from '@/components/threaddump/ThreadStateChanges.vue';
+import PersistentBlockers from '@/components/threaddump/PersistentBlockers.vue';
+import Diagnose from '@/components/threaddump/Diagnose.vue';
 import { useRouter } from 'vue-router';
 import {
   Clock,
@@ -55,9 +58,9 @@ interface Overview {
   jniWeakRefs: number;
   deadLockCount: number;
   errorCount: number;
-  javaStates: string[];
-  states: string[];
-  javaThreadStat: { javaCounts: number[] };
+  javaStates: { name: string }[];
+  states: { name: string }[];
+  javaThreadStat: { javaCounts: number[]; counts: number[] };
   jitThreadStat:  { counts: number[] };
   gcThreadStat:   { counts: number[] };
   otherThreadStat:{ counts: number[] };
@@ -292,7 +295,21 @@ onMounted(loadFiles);
         <div v-if="compared" v-loading="loading">
 
           <!-- All sections in one collapse -->
-          <el-collapse :model-value="['basic', 'summary', 'groups', 'cpu']">
+          <el-collapse :model-value="['diagnosis', 'basic', 'summary', 'states', 'groups', 'cpu', 'stateChanges', 'blockers']">
+
+            <!-- Diagnosis -->
+            <el-collapse-item name="diagnosis" :title="tdt('threadDumpCompare.diagnosis')">
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <div class="diag-header">{{ file1Name }}</div>
+                  <Diagnose :target="file1" />
+                </el-col>
+                <el-col :span="12">
+                  <div class="diag-header">{{ file2Name }}</div>
+                  <Diagnose :target="file2" />
+                </el-col>
+              </el-row>
+            </el-collapse-item>
 
             <!-- Basic Information -->
             <el-collapse-item name="basic" :title="tdt('threadDumpCompare.basicInfo')">
@@ -359,6 +376,27 @@ onMounted(loadFiles);
             <!-- CPU Delta -->
             <el-collapse-item name="cpu" :title="tdt('threadDumpCompare.cpuDelta')">
               <CpuConsumingThreadsCompare :file1="file1" :file2="file2" />
+            </el-collapse-item>
+
+            <!-- State Distribution -->
+            <el-collapse-item name="states" :title="tdt('threadDumpCompare.stateDistribution')">
+              <StateDistributionCompare
+                :java-states="ov1!.javaStates.map(s => s.name ?? String(s))"
+                :java-counts1="ov1!.javaThreadStat.javaCounts"
+                :java-counts2="ov2!.javaThreadStat.javaCounts"
+                :dump1-name="file1Name"
+                :dump2-name="file2Name"
+              />
+            </el-collapse-item>
+
+            <!-- Thread State Changes -->
+            <el-collapse-item name="stateChanges" :title="tdt('threadDumpCompare.stateChanges')">
+              <ThreadStateChanges :file1="file1" :file2="file2" />
+            </el-collapse-item>
+
+            <!-- Persistent Blockers -->
+            <el-collapse-item name="blockers" :title="tdt('threadDumpCompare.persistentBlockers')">
+              <PersistentBlockers :file1="file1" :file2="file2" />
             </el-collapse-item>
           </el-collapse>
 
@@ -437,6 +475,16 @@ onMounted(loadFiles);
 
 /* New group highlight */
 :deep(.new-group) { color: var(--el-color-primary); font-style: italic; }
+
+.diag-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--el-text-color-secondary);
+  padding: 4px 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 :deep(.el-collapse-item__content) {
   padding-bottom: 12px !important;

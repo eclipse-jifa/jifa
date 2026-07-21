@@ -23,7 +23,11 @@ import { useI18n } from 'vue-i18n';
 import Thread from '@/components/threaddump/Thread.vue';
 import { TABLE_HEADER_CELL_STYLE } from '@/components/styles';
 
-const { request } = useAnalysisApiRequester();
+import { THREAD_DUMP } from '@/composables/file-types';
+
+const props = defineProps<{ target?: string }>();
+
+const { request, requestWithTarget } = useAnalysisApiRequester();
 const { t } = useI18n();
 
 const loading = ref(false);
@@ -45,7 +49,10 @@ const selectedThreadIds = ref<number[]>([]);
 function loadData() {
   loading.value = true;
   diagnostics.value = [];
-  request('diagnose', {}).then((data: DiagnosticEntry[]) => {
+  const promise = props.target
+    ? requestWithTarget('diagnose', THREAD_DUMP, props.target, {})
+    : request('diagnose', {});
+  promise.then((data: DiagnosticEntry[]) => {
     if (!data || data.length === 0) {
       diagnostics.value = [{ severity: 'OK', type: 'NO_ISSUES', params: {} }];
     } else {
