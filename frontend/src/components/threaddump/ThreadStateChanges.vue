@@ -154,6 +154,7 @@ onMounted(load);
 h4 {
   margin: 0 0 10px;
   font-size: 0.95rem;
+  font-family: var(--el-font-family);
   color: var(--el-text-color-secondary);
 }
 </style>

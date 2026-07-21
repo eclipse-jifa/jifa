@@ -419,6 +419,7 @@ onMounted(async () => {
 
 .picker-vs {
   font-size: 1rem;
+  font-family: var(--el-font-family);
   font-weight: bold;
   color: var(--el-text-color-secondary);
 }
@@ -435,10 +436,12 @@ onMounted(async () => {
 }
 .empty-icon {
   font-size: 64px;
+  font-family: var(--el-font-family);
   color: var(--el-text-color-placeholder);
 }
 .empty-title {
   font-size: 1.1rem;
+  font-family: var(--el-font-family);
   font-weight: 600;
   color: var(--el-text-color-primary);
   margin: 0;
