@@ -23,6 +23,8 @@ import { tdt } from '@/i18n/i18n';
 const props = defineProps<{
   file1: string;
   file2: string;
+  dump1Name: string;
+  dump2Name: string;
 }>();
 
 const { requestWithTarget } = useAnalysisApiRequester();
@@ -50,16 +52,9 @@ interface SummaryRow {
 }
 
 const summaryRows = computed((): SummaryRow[] => {
-  const changed = stateChanged.value.length;
   const disappearedCount = disappeared.value.length;
   const newCount = newThreads.value.length;
   return [
-    {
-      label: tdt('threadStateChanges.summaryChanged') ?? 'State changed',
-      count1: changed,
-      count2: changed,
-      delta: 0,
-    },
     {
       label: tdt('threadStateChanges.summaryDisappeared') ?? 'Disappeared',
       count1: disappearedCount,
@@ -136,19 +131,20 @@ onMounted(load);
     <template v-if="!loading">
       <el-table :data="summaryRows" stripe>
         <el-table-column :label="tdt('threadStateChanges.changeType') ?? 'Change type'" prop="label" min-width="200" />
-        <el-table-column :label="tdt('threadStateChanges.dump1Impact') ?? 'Dump 1'" prop="count1" align="right" min-width="220" />
+        <el-table-column :label="dump1Name" prop="count1" align="right" min-width="220" />
         <el-table-column :label="tdt('threadStateChanges.delta') ?? 'Δ'" align="center" width="130">
           <template #default="{ row }">
             <span :class="deltaClass(row.delta)">{{ deltaText(row.delta) }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="tdt('threadStateChanges.dump2Impact') ?? 'Dump 2'" prop="count2" align="right" min-width="220" />
+        <el-table-column :label="dump2Name" prop="count2" align="right" min-width="220" />
       </el-table>
 
       <el-divider />
 
-      <h4>{{ tdt('threadStateChanges.transitionsTitle') ?? 'State transition breakdown' }}</h4>
-      <el-table v-if="transitionRows.length > 0" :data="transitionRows" stripe :max-height="280">
+      <template v-if="stateChanged.length > 0">
+        <h4>{{ tdt('threadStateChanges.transitionsTitle') ?? 'State transition breakdown' }}</h4>
+        <el-table :data="transitionRows" stripe :max-height="280">
         <el-table-column :label="tdt('threadStateChanges.stateBefore')" min-width="220">
           <template #default="{ row }">
             <el-tag :type="stateType(row.from)" size="small" disable-transitions>{{ row.from }}</el-tag>
@@ -160,8 +156,9 @@ onMounted(load);
             <el-tag :type="stateType(row.to)" size="small" disable-transitions>{{ row.to }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column :label="tdt('threadStateChanges.count') ?? 'Count'" prop="count" width="120" align="right" />
-      </el-table>
+          <el-table-column :label="tdt('threadStateChanges.count') ?? 'Count'" prop="count" width="120" align="right" />
+        </el-table>
+      </template>
       <el-empty v-else :description="tdt('threadStateChanges.noChanges')" />
     </template>
   </div>

@@ -24,6 +24,8 @@ import Thread from '@/components/threaddump/Thread.vue';
 const props = defineProps<{
   file1: string;
   file2: string;
+  dump1Name: string;
+  dump2Name: string;
 }>();
 
 const { requestWithTarget } = useAnalysisApiRequester();
@@ -111,10 +113,7 @@ async function loadBlockedThreads(target: string) {
     'threads',
     THREAD_DUMP,
     target,
-    {
-      threadState: 'BLOCKED_ON_MONITOR_ENTER',
-      paging: { page: 1, pageSize: 10000 }
-    }
+    { threadState: 'BLOCKED_ON_MONITOR_ENTER', page: 1, pageSize: 10000 }
   );
   return pageView?.data ?? [];
 }
@@ -153,13 +152,13 @@ onMounted(load);
     <template v-if="!loading">
       <el-table :data="summaryRows" stripe>
         <el-table-column :label="tdt('persistentBlockers.summaryType') ?? 'Type'" prop="label" min-width="200" />
-        <el-table-column :label="tdt('persistentBlockers.dump1') ?? 'Dump 1'" prop="count1" align="right" min-width="220" />
+        <el-table-column :label="dump1Name" prop="count1" align="right" min-width="220" />
         <el-table-column :label="tdt('persistentBlockers.delta') ?? 'Δ'" align="center" width="130">
           <template #default="{ row }">
             <span :class="deltaClass(row.delta)">{{ deltaText(row.delta) }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="tdt('persistentBlockers.dump2') ?? 'Dump 2'" prop="count2" align="right" min-width="220" />
+        <el-table-column :label="dump2Name" prop="count2" align="right" min-width="220" />
       </el-table>
 
       <el-alert
@@ -171,8 +170,9 @@ onMounted(load);
         style="margin: 12px 0"
       />
 
-      <h4>{{ tdt('persistentBlockers.detailsTitle') ?? 'Threads blocked in both dumps' }}</h4>
-      <el-table v-if="blockedThreads.length > 0" :data="blockedThreads" stripe :max-height="320">
+      <template v-if="blockedThreads.length > 0">
+        <h4>{{ tdt('persistentBlockers.detailsTitle') ?? 'Threads blocked in both dumps' }}</h4>
+        <el-table :data="blockedThreads" stripe :max-height="320">
         <el-table-column :label="tdt('persistentBlockers.thread')" prop="name" min-width="320" show-overflow-tooltip />
         <el-table-column :label="tdt('persistentBlockers.actions')" width="120" align="center">
           <template #default="{ row }">
@@ -181,8 +181,8 @@ onMounted(load);
             </el-button>
           </template>
         </el-table-column>
-      </el-table>
-      <el-empty v-else :description="tdt('persistentBlockers.noPersistentBlockers')" />
+        </el-table>
+      </template>
     </template>
     <el-dialog v-model="dialogVisible" width="80%" destroy-on-close>
       <Thread :ids="selectedId != null ? [selectedId] : []" />

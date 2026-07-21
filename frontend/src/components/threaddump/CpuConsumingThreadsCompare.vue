@@ -185,11 +185,3 @@ onUnmounted(() => {
   </div>
 </template>
 
-interface ThreadDelta {
-  id: number;
-  name: string;
-  cpuFirst: number;
-  cpuSecond: number;
-  cpuDelta: number;
-}
-

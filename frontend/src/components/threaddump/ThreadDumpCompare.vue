@@ -25,7 +25,7 @@ import CpuConsumingThreadsCompare from '@/components/threaddump/CpuConsumingThre
 import StateDistributionCompare from '@/components/threaddump/StateDistributionCompare.vue';
 import ThreadStateChanges from '@/components/threaddump/ThreadStateChanges.vue';
 import PersistentBlockers from '@/components/threaddump/PersistentBlockers.vue';
-import Diagnose from '@/components/threaddump/Diagnose.vue';
+import DiagnoseCompare from '@/components/threaddump/DiagnoseCompare.vue';
 import { useRouter } from 'vue-router';
 import {
   Clock,
@@ -299,16 +299,12 @@ onMounted(loadFiles);
 
             <!-- Diagnosis -->
             <el-collapse-item name="diagnosis" :title="tdt('threadDumpCompare.diagnosis')">
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <div class="diag-header">{{ file1Name }}</div>
-                  <Diagnose :target="file1" />
-                </el-col>
-                <el-col :span="12">
-                  <div class="diag-header">{{ file2Name }}</div>
-                  <Diagnose :target="file2" />
-                </el-col>
-              </el-row>
+              <DiagnoseCompare
+                :file1="file1"
+                :file2="file2"
+                :dump1-name="file1Name"
+                :dump2-name="file2Name"
+              />
             </el-collapse-item>
 
             <!-- Basic Information -->
@@ -391,12 +387,12 @@ onMounted(loadFiles);
 
             <!-- Thread State Changes -->
             <el-collapse-item name="stateChanges" :title="tdt('threadDumpCompare.stateChanges')">
-              <ThreadStateChanges :file1="file1" :file2="file2" />
+              <ThreadStateChanges :file1="file1" :file2="file2" :dump1-name="file1Name" :dump2-name="file2Name" />
             </el-collapse-item>
 
             <!-- Persistent Blockers -->
             <el-collapse-item name="blockers" :title="tdt('threadDumpCompare.persistentBlockers')">
-              <PersistentBlockers :file1="file1" :file2="file2" />
+              <PersistentBlockers :file1="file1" :file2="file2" :dump1-name="file1Name" :dump2-name="file2Name" />
             </el-collapse-item>
           </el-collapse>
 
@@ -454,20 +450,6 @@ onMounted(loadFiles);
   margin: 0;
 }
 
-.col-header {
-  display: flex;
-  align-items: center;
-  padding: 6px 0 2px;
-  font-weight: bold;
-  font-size: 0.85rem;
-  color: var(--el-text-color-secondary);
-}
-.col-label  { flex: 1 0 120px; }
-.col-dump   { flex: 2 0 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.col-delta  { flex: 0 0 80px; text-align: center; }
-.dump1-head { color: var(--el-color-primary); }
-.dump2-head { color: var(--el-color-success); }
-
 /* Delta colors */
 :deep(.delta-pos)  { color: var(--el-color-danger);  font-weight: bold; }
 :deep(.delta-neg)  { color: var(--el-color-success); font-weight: bold; }
@@ -476,15 +458,7 @@ onMounted(loadFiles);
 /* New group highlight */
 :deep(.new-group) { color: var(--el-color-primary); font-style: italic; }
 
-.diag-header {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--el-text-color-secondary);
-  padding: 4px 0 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+
 
 :deep(.el-collapse-item__content) {
   padding-bottom: 12px !important;
