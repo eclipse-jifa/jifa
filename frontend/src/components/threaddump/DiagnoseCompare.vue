@@ -191,7 +191,7 @@ onMounted(load);
       </el-table-column>
 
       <!-- Dump 1 cell -->
-      <el-table-column :label="dump1Name" min-width="300">
+      <el-table-column :label="dump1Name" min-width="220">
         <template #default="{ row }">
           <div class="cell-content">
             <el-icon :style="severityStyle(row.dump1)" style="flex-shrink:0">
@@ -207,8 +207,17 @@ onMounted(load);
         </template>
       </el-table-column>
 
+      <!-- Δ column -->
+      <el-table-column :label="tdt('threadDumpCompare.deltaLabel') ?? 'Δ'" width="130" align="center">
+        <template #default="{ row }">
+          <el-tag v-if="row.isNew"      type="danger"  size="small" disable-transitions>{{ tdt('diagnoseCompare.new')      ?? 'New' }}</el-tag>
+          <el-tag v-else-if="row.isResolved" type="success" size="small" disable-transitions>{{ tdt('diagnoseCompare.resolved') ?? 'Fixed' }}</el-tag>
+          <span v-else class="delta-zero">=</span>
+        </template>
+      </el-table-column>
+
       <!-- Dump 2 cell -->
-      <el-table-column :label="dump2Name" min-width="300">
+      <el-table-column :label="dump2Name" min-width="220">
         <template #default="{ row }">
           <div class="cell-content">
             <el-icon :style="severityStyle(row.dump2)" style="flex-shrink:0">
@@ -223,17 +232,6 @@ onMounted(load);
               @click="openThreads(row.dump2, file2)"
             >{{ tdt('diagnosis.examine') }}</el-button>
           </div>
-          <!-- Badge for state changes -->
-          <el-tag
-            v-if="row.isNew"
-            type="danger" size="small" disable-transitions
-            style="margin-left: 6px; vertical-align: middle"
-          >{{ tdt('diagnoseCompare.new') ?? 'New' }}</el-tag>
-          <el-tag
-            v-else-if="row.isResolved"
-            type="success" size="small" disable-transitions
-            style="margin-left: 6px; vertical-align: middle"
-          >{{ tdt('diagnoseCompare.resolved') ?? 'Resolved' }}</el-tag>
         </template>
       </el-table-column>
 
