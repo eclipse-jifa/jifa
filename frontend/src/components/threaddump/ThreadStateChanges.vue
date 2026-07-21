@@ -125,7 +125,7 @@ onMounted(load);
         <el-table-column :label="dump2Name" prop="count2" align="right" min-width="220" />
       </el-table>
 
-      <el-divider />
+      <el-divider v-if="stateChanged.length > 0 || changes.length > 0" />
 
       <template v-if="stateChanged.length > 0">
         <h4>{{ tdt('threadStateChanges.transitionsTitle') ?? 'State transition breakdown' }}</h4>

@@ -35,6 +35,7 @@ export default {
   loadFileContent: "Load",
   loadMoreFileContent: "Load More",
   threadNameLabel: "Thread Name",
+  compareWithAnother: "Compare with another dump",
 
   // ----- Blocked Threads -----
   blockedThreadsLabel: "Blocked Threads",

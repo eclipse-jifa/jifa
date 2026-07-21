@@ -35,6 +35,7 @@ export default {
   loadFileContent: "加载",
   loadMoreFileContent: "加载更多",
   threadNameLabel: "线程名",
+  compareWithAnother: "与其他 Dump 对比",
 
   // ----- 阻塞线程 -----
   blockedThreadsLabel: "阻塞线程",

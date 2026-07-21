@@ -27,7 +27,8 @@ import StateDistributionCompare from '@/components/threaddump/StateDistributionC
 import ThreadStateChanges from '@/components/threaddump/ThreadStateChanges.vue';
 import PersistentBlockers from '@/components/threaddump/PersistentBlockers.vue';
 import DiagnoseCompare from '@/components/threaddump/DiagnoseCompare.vue';
-import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import { useRouter, useRoute } from 'vue-router';
 import {
   Clock,
   CoffeeCup,
@@ -41,6 +42,7 @@ import {
 } from '@element-plus/icons-vue';
 
 const router = useRouter();
+const route = useRoute();
 
 const { requestWithTarget } = useAnalysisApiRequester();
 
@@ -99,6 +101,8 @@ async function loadFiles() {
       params: { type: 'THREAD_DUMP', page: 1, pageSize: 200 }
     });
     availableFiles.value = resp.data.data ?? [];
+  } catch {
+    ElMessage.error('Failed to load thread dump files');
   } finally {
     filesLoading.value = false;
   }
@@ -207,7 +211,14 @@ async function runCompare() {
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 
-onMounted(loadFiles);
+onMounted(async () => {
+  await loadFiles();
+  // Pre-fill file1 from query param (e.g. when navigating from single dump view)
+  const preselect = route.query.file1 as string | undefined;
+  if (preselect && availableFiles.value.some(f => f.uniqueName === preselect)) {
+    file1.value = preselect;
+  }
+});
 </script>
 
 <template>
@@ -282,7 +293,7 @@ onMounted(loadFiles);
         <div v-if="compared" v-loading="loading">
 
           <!-- All sections in one collapse -->
-          <el-collapse :model-value="['diagnosis', 'basic', 'summary', 'states', 'groups', 'cpu', 'stateChanges', 'blockers']">
+          <el-collapse :model-value="['diagnosis', 'basic', 'summary', 'groups', 'states', 'stateChanges', 'blockers', 'cpu']">
 
             <!-- Diagnosis -->
             <el-collapse-item name="diagnosis" :title="tdt('threadDumpCompare.diagnosis')">
@@ -356,11 +367,6 @@ onMounted(loadFiles);
               </el-table>
             </el-collapse-item>
 
-            <!-- CPU Delta -->
-            <el-collapse-item name="cpu" :title="tdt('threadDumpCompare.cpuDelta')">
-              <CpuConsumingThreadsCompare :file1="file1" :file2="file2" />
-            </el-collapse-item>
-
             <!-- State Distribution -->
             <el-collapse-item name="states" :title="tdt('threadDumpCompare.stateDistribution')">
               <StateDistributionCompare
@@ -380,6 +386,11 @@ onMounted(loadFiles);
             <!-- Persistent Blockers -->
             <el-collapse-item name="blockers" :title="tdt('threadDumpCompare.persistentBlockers')">
               <PersistentBlockers :file1="file1" :file2="file2" :dump1-name="file1Name" :dump2-name="file2Name" />
+            </el-collapse-item>
+
+            <!-- CPU Delta (last – often empty) -->
+            <el-collapse-item name="cpu" :title="tdt('threadDumpCompare.cpuDelta')">
+              <CpuConsumingThreadsCompare :file1="file1" :file2="file2" />
             </el-collapse-item>
           </el-collapse>
 
