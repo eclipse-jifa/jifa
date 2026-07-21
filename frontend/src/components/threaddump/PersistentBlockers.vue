@@ -20,6 +20,8 @@ import { useAnalysisApiRequester } from '@/composables/analysis-api-requester';
 import { THREAD_DUMP } from '@/composables/file-types';
 import { tdt } from '@/i18n/i18n';
 import Thread from '@/components/threaddump/Thread.vue';
+import { deltaClass, deltaText } from '@/components/threaddump/thread-state-colors';
+import type { PageView } from '@/components/threaddump/thread-state-colors';
 
 const props = defineProps<{
   file1: string;
@@ -35,11 +37,6 @@ interface BlockedThread {
   name: string;
   cpu?: number;
   elapsed?: number;
-}
-
-interface PageView<T> {
-  data: T[];
-  totalSize: number;
 }
 
 interface SummaryRow {
@@ -94,18 +91,6 @@ const summaryRows = computed((): SummaryRow[] => {
 function openThread(id: number) {
   selectedId.value = id;
   dialogVisible.value = true;
-}
-
-function deltaClass(d: number) {
-  if (d > 0) return 'delta-pos';
-  if (d < 0) return 'delta-neg';
-  return 'delta-zero';
-}
-
-function deltaText(d: number) {
-  if (d > 0) return `▲ +${d}`;
-  if (d < 0) return `▼ ${d}`;
-  return '=';
 }
 
 async function loadBlockedThreads(target: string) {
@@ -191,10 +176,7 @@ onMounted(load);
 </template>
 
 <style scoped>
-:deep(.delta-pos)  { color: var(--el-color-danger);  font-weight: bold; }
-:deep(.delta-neg)  { color: var(--el-color-success); font-weight: bold; }
-:deep(.delta-zero) { color: var(--el-text-color-secondary); }
-
+/* delta colors come from ThreadDumpCompare parent's :deep rules */
 h4 {
   margin: 6px 0 10px;
   font-size: 0.95rem;

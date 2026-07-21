@@ -19,6 +19,7 @@
 import { useAnalysisApiRequester } from '@/composables/analysis-api-requester';
 import { THREAD_DUMP } from '@/composables/file-types';
 import { tdt } from '@/i18n/i18n';
+import { deltaClass, deltaText, stateTagStyle } from '@/components/threaddump/thread-state-colors';
 
 const props = defineProps<{
   file1: string;
@@ -84,25 +85,9 @@ const transitionRows = computed(() => {
   return Array.from(grouped.values()).sort((a, b) => b.count - a.count);
 });
 
-// State-tag color helper – maps Java state strings to Element Plus tag types
-function stateType(state: string | null): 'primary' | 'success' | 'warning' | 'danger' | 'info' {
-  if (!state) return 'info';
-  if (state.includes('RUNNABLE')) return 'success';
-  if (state.includes('BLOCKED'))  return 'danger';
-  if (state.includes('WAITING'))  return 'warning';
-  return 'primary';
-}
-
-function deltaClass(d: number) {
-  if (d > 0) return 'delta-pos';
-  if (d < 0) return 'delta-neg';
-  return 'delta-zero';
-}
-
-function deltaText(d: number) {
-  if (d > 0) return `▲ +${d}`;
-  if (d < 0) return `▼ ${d}`;
-  return '=';
+// State-tag style helper – uses shared stateTagStyle for consistent colors
+function tagStyle(state: string | null): Record<string, string> {
+  return state ? stateTagStyle(state) : {};
 }
 
 async function load() {
@@ -147,13 +132,13 @@ onMounted(load);
         <el-table :data="transitionRows" stripe :max-height="280">
         <el-table-column :label="tdt('threadStateChanges.stateBefore')" min-width="220">
           <template #default="{ row }">
-            <el-tag :type="stateType(row.from)" size="small" disable-transitions>{{ row.from }}</el-tag>
+            <el-tag :style="tagStyle(row.from)" size="small" disable-transitions>{{ row.from }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column width="50" align="center"><template #default>→</template></el-table-column>
         <el-table-column :label="tdt('threadStateChanges.stateAfter')" min-width="220">
           <template #default="{ row }">
-            <el-tag :type="stateType(row.to)" size="small" disable-transitions>{{ row.to }}</el-tag>
+            <el-tag :style="tagStyle(row.to)" size="small" disable-transitions>{{ row.to }}</el-tag>
           </template>
         </el-table-column>
           <el-table-column :label="tdt('threadStateChanges.count') ?? 'Count'" prop="count" width="120" align="right" />
@@ -165,10 +150,7 @@ onMounted(load);
 </template>
 
 <style scoped>
-:deep(.delta-pos)  { color: var(--el-color-danger);  font-weight: bold; }
-:deep(.delta-neg)  { color: var(--el-color-success); font-weight: bold; }
-:deep(.delta-zero) { color: var(--el-text-color-secondary); }
-
+/* delta colors come from ThreadDumpCompare parent's :deep rules */
 h4 {
   margin: 0 0 10px;
   font-size: 0.95rem;

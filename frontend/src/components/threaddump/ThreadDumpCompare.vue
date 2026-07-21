@@ -21,6 +21,7 @@ import { useAnalysisApiRequester } from '@/composables/analysis-api-requester';
 import { THREAD_DUMP } from '@/composables/file-types';
 import { tdt } from '@/i18n/i18n';
 import { prettyTime } from '@/support/utils';
+import { deltaClass, deltaText } from '@/components/threaddump/thread-state-colors';
 import CpuConsumingThreadsCompare from '@/components/threaddump/CpuConsumingThreadsCompare.vue';
 import StateDistributionCompare from '@/components/threaddump/StateDistributionCompare.vue';
 import ThreadStateChanges from '@/components/threaddump/ThreadStateChanges.vue';
@@ -202,20 +203,6 @@ async function runCompare() {
   } finally {
     loading.value = false;
   }
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function deltaClass(d: number) {
-  if (d > 0) return 'delta-pos';
-  if (d < 0) return 'delta-neg';
-  return 'delta-zero';
-}
-
-function deltaText(d: number) {
-  if (d > 0) return `▲ +${d}`;
-  if (d < 0) return `▼ ${d}`;
-  return '=';
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────

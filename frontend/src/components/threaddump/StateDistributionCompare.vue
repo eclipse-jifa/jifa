@@ -17,6 +17,7 @@
  -->
 <script setup lang="ts">
 import { tdt } from '@/i18n/i18n';
+import { deltaClass, deltaText } from '@/components/threaddump/thread-state-colors';
 
 /**
  * Renders a side-by-side grouped bar chart comparing the Java thread state
@@ -59,17 +60,6 @@ const rows = computed((): StateRow[] => {
     .sort((a, b) => Math.max(b.count1, b.count2) - Math.max(a.count1, a.count2));
 });
 
-function deltaClass(d: number) {
-  if (d > 0) return 'delta-pos';
-  if (d < 0) return 'delta-neg';
-  return 'delta-zero';
-}
-
-function deltaText(d: number) {
-  if (d > 0) return `▲ +${d}`;
-  if (d < 0) return `▼ ${d}`;
-  return '=';
-}
 </script>
 
 <template>
@@ -89,7 +79,5 @@ function deltaText(d: number) {
 </template>
 
 <style scoped>
-:deep(.delta-pos)  { color: var(--el-color-danger);  font-weight: bold; }
-:deep(.delta-neg)  { color: var(--el-color-success); font-weight: bold; }
-:deep(.delta-zero) { color: var(--el-text-color-secondary); }
+/* delta colors come from ThreadDumpCompare parent's :deep rules */
 </style>
