@@ -75,7 +75,7 @@ function deltaText(d: number) {
 <template>
   <div>
     <el-table v-if="rows.length > 0" :data="rows" stripe>
-      <el-table-column :label="tdt('stateDistributionCompare.state') ?? 'State'" prop="state" min-width="260" />
+      <el-table-column :label="tdt('stateDistributionCompare.state') ?? 'State'" prop="state" min-width="200" />
       <el-table-column :label="dump1Name" prop="count1" align="right" min-width="220" />
       <el-table-column :label="tdt('stateDistributionCompare.delta') ?? 'Δ'" align="center" width="130">
         <template #default="{ row }">

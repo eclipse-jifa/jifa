@@ -86,6 +86,9 @@ export default {
     threadSummary: "线程摘要",
     threadGroupSummary: "线程组摘要",
     cpuDelta: "CPU 耗时增量",
+    stateDistribution: "状态分布",
+    stateChanges: "线程状态变化",
+    persistentBlockers: "持续阻塞线程（两个 Dump 均阻塞）",
     deltaPositive: "增加",
     deltaNegative: "减少",
     noFilesSelected: "请选择两个线程 Dump 文件进行对比",
@@ -160,6 +163,69 @@ export default {
     stateLabel: "状态",
     cpuLabel: "CPU 耗时",
     elapsedLabel: "运行时长",
+  },
+
+  // ----- 状态分布对比 -----
+  stateDistributionCompare: {
+    state: "状态",
+    delta: "Δ",
+    noData: "暂无线程状态数据。",
+  },
+
+  // ----- 线程状态变化 -----
+  threadStateChanges: {
+    changeType: "变化类型",
+    dump1Impact: "Dump 1",
+    dump2Impact: "Dump 2",
+    delta: "Δ",
+    transitionsTitle: "状态转换明细",
+    count: "数量",
+    summaryChanged: "状态已变化",
+    summaryDisappeared: "已消失",
+    summaryNew: "第二个 Dump 中的新线程",
+    tabChanged: "状态变化",
+    tabDisappeared: "已消失",
+    tabNew: "新线程",
+    thread: "线程",
+    stateBefore: "状态（Dump 1）",
+    stateAfter: "状态（Dump 2）",
+    noChanges: "两个 Dump 之间没有线程改变状态。",
+    noDisappeared: "两个 Dump 之间没有线程消失。",
+    noNew: "第二个 Dump 中没有新线程出现。",
+  },
+
+  // ----- 持续阻塞线程 -----
+  persistentBlockers: {
+    warningTitle: "1 个线程在两个 Dump 中均被阻塞 | {count} 个线程在两个 Dump 中均被阻塞",
+    summaryType: "类型",
+    dump1: "Dump 1",
+    dump2: "Dump 2",
+    delta: "Δ",
+    allBlocked: "阻塞线程（全部）",
+    persistentOnly: "两个 Dump 均阻塞",
+    resolved: "已解除阻塞",
+    introduced: "Dump 2 中新增阻塞",
+    detailsTitle: "两个 Dump 中均被阻塞的线程",
+    thread: "线程",
+    actions: "操作",
+    inspect: "查看",
+    noPersistentBlockers: "两个 Dump 中没有线程持续被阻塞——未检测到持续竞争。",
+  },
+
+  // ----- 诊断对比 -----
+  diagnoseCompare: {
+    issue: "问题",
+    noIssue: "✓ 无问题",
+    new: "新增",
+    resolved: "已解决",
+    issueType: {
+      DEADLOCK:                  "死锁",
+      HIGH_BLOCKED_THREAD_COUNT: "线程阻塞",
+      HIGH_THREAD_COUNT:         "线程数过高",
+      HIGH_STACK_SIZE:           "调用栈过深",
+      HIGH_CPU_RATIO:            "CPU 占用率高",
+      THREAD_THROWING_EXCEPTION: "抛出异常",
+    },
   },
 
 }
