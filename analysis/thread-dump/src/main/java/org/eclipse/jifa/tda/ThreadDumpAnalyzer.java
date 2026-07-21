@@ -45,6 +45,7 @@ import org.eclipse.jifa.tda.vo.VMonitor;
 import org.eclipse.jifa.tda.vo.VThread;
 import org.eclipse.jifa.tda.vo.VThreadDelta;
 import org.eclipse.jifa.tda.vo.VThreadStateChange;
+import org.eclipse.jifa.tda.vo.VMultiDumpComparison;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -756,5 +757,126 @@ public class ThreadDumpAnalyzer {
                 .sorted(Comparator.comparing(Thread::getName))
                 .map(this::convertToVThread)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Compares this dump against up to three additional dumps in a single call,
+     * returning a unified matrix view: one row per unique thread (matched by NID),
+     * one column per dump.
+     *
+     * <p>This is the preferred API for analysing thread-dump series (e.g. dumps
+     * taken at t0, t1, t2, t3). Up to three {@code other} parameters are accepted;
+     * unused slots should be omitted by the caller.
+     *
+     * @param other1 second dump (required)
+     * @param other2 third  dump (optional, pass {@code null} to omit)
+     * @param other3 fourth dump (optional, pass {@code null} to omit)
+     * @return unified multi-dump comparison result
+     */
+    public VMultiDumpComparison compareMultiple(
+            @ApiParameterMeta(comparisonTargetPath = true)           Path other1,
+            @ApiParameterMeta(required = false, comparisonTargetPath = true) Path other2,
+            @ApiParameterMeta(required = false, comparisonTargetPath = true) Path other3) {
+
+        // Build list of analyzers: primary + up to 3 others
+        List<ThreadDumpAnalyzer> analyzers = new ArrayList<>();
+        analyzers.add(this);
+        analyzers.add(build(other1, ProgressListener.NoOpProgressListener));
+        if (other2 != null) analyzers.add(build(other2, ProgressListener.NoOpProgressListener));
+        if (other3 != null) analyzers.add(build(other3, ProgressListener.NoOpProgressListener));
+
+        int n = analyzers.size();
+
+        // ── DumpSummary per dump ──────────────────────────────────────────────
+        List<VMultiDumpComparison.DumpSummary> summaries = new ArrayList<>();
+        for (ThreadDumpAnalyzer a : analyzers) {
+            VMultiDumpComparison.DumpSummary s = new VMultiDumpComparison.DumpSummary();
+            s.setName(java.nio.file.Path.of(a.snapshot.getPath()).getFileName().toString());
+            s.setDeadLockCount(a.snapshot.getDeadLockThreads() != null
+                    ? a.snapshot.getDeadLockThreads().size() : 0);
+
+            Map<String, Integer> stateCounts = new java.util.LinkedHashMap<>();
+            int total = 0;
+            for (JavaThread t : a.snapshot.getJavaThreads()) {
+                if (t.getJavaThreadState() != null) {
+                    String st = String.valueOf(t.getJavaThreadState());
+                    stateCounts.merge(st, 1, Integer::sum);
+                    total++;
+                }
+            }
+            s.setThreadCount(total);
+            s.setStateCounts(stateCounts);
+            summaries.add(s);
+        }
+
+        // ── Collect all NIDs across all dumps ─────────────────────────────────
+        // NID → [name, state in dump 0, state in dump 1, ...]
+        // Use LinkedHashMap to preserve insertion order (primary dump first)
+        Map<Long, String[]> matrix = new java.util.LinkedHashMap<>();
+
+        for (int i = 0; i < n; i++) {
+            for (JavaThread t : analyzers.get(i).snapshot.getJavaThreads()) {
+                long nid = t.getNid();
+                if (!matrix.containsKey(nid)) {
+                    // slot 0 = name, slots 1..n = states per dump
+                    String[] row = new String[n + 1];
+                    row[0] = t.getName();
+                    matrix.put(nid, row);
+                }
+                String[] row = matrix.get(nid);
+                if (t.getJavaThreadState() != null) {
+                    row[i + 1] = String.valueOf(t.getJavaThreadState());
+                }
+                // Use first non-null name found
+                if (row[0] == null && t.getName() != null) {
+                    row[0] = t.getName();
+                }
+            }
+        }
+
+        // ── Build ThreadRow list ──────────────────────────────────────────────
+        final String BLOCKED = String.valueOf(org.eclipse.jifa.tda.enums.JavaThreadState.BLOCKED_ON_MONITOR_ENTER);
+        List<VMultiDumpComparison.ThreadRow> rows = new ArrayList<>();
+
+        for (String[] cells : matrix.values()) {
+            VMultiDumpComparison.ThreadRow row = new VMultiDumpComparison.ThreadRow();
+            row.setName(cells[0]);
+
+            List<String> states = new ArrayList<>(n);
+            int presentInCount = 0;
+            int blockedInCount = 0;
+            String prevState = null;
+            boolean changed = false;
+
+            for (int i = 1; i <= n; i++) {
+                String st = cells[i]; // null = not present in this dump
+                states.add(st);
+                if (st != null) {
+                    presentInCount++;
+                    if (BLOCKED.equals(st)) blockedInCount++;
+                    if (prevState != null && !prevState.equals(st)) changed = true;
+                    prevState = st;
+                }
+            }
+
+            row.setStates(states);
+            row.setAlwaysBlocked(presentInCount > 0 && blockedInCount == presentInCount);
+            row.setStateChanged(changed);
+            rows.add(row);
+        }
+
+        // Sort: alwaysBlocked first, then stateChanged, then rest; by name within groups
+        rows.sort(Comparator
+                .<VMultiDumpComparison.ThreadRow, Integer>comparing(r -> {
+                    if (r.isAlwaysBlocked()) return 0;
+                    if (r.isStateChanged())  return 1;
+                    return 2;
+                })
+                .thenComparing(r -> r.getName() != null ? r.getName() : ""));
+
+        VMultiDumpComparison result = new VMultiDumpComparison();
+        result.setDumpOverviews(summaries);
+        result.setThreadRows(rows);
+        return result;
     }
 }
