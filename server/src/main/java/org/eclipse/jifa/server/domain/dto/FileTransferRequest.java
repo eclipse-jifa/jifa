@@ -197,7 +197,7 @@ public class FileTransferRequest {
                     valid &= checkNotBlank(request.scpSourcePath, "scpSourcePath", context);
                 }
 
-                case URL -> valid &= checkNotBlank(request.url, "url", context);
+                case URL -> valid &= checkHttpUrl(request.url, "url", context);
 
                 case TEXT -> {
                     // TODO: should check file type
@@ -215,6 +215,35 @@ public class FileTransferRequest {
         private boolean checkNotBlank(String value, String name, ConstraintValidatorContext context) {
             if (StringUtils.isBlank(value)) {
                 context.buildConstraintViolationWithTemplate("{jakarta.validation.constraints.NotBlank.message}")
+                       .addPropertyNode(name)
+                       .addConstraintViolation();
+                return false;
+            }
+            return true;
+        }
+
+        /**
+         * Ensures the value is a non-blank http(s) URL. Other schemes such as file, jar and ftp
+         * are rejected to prevent reading arbitrary local resources on the server host.
+         */
+        private boolean checkHttpUrl(String value, String name, ConstraintValidatorContext context) {
+            if (!checkNotBlank(value, name, context)) {
+                return false;
+            }
+
+            java.net.URL url;
+            try {
+                url = new java.net.URL(value);
+            } catch (java.net.MalformedURLException e) {
+                context.buildConstraintViolationWithTemplate("Only http and https URLs are supported")
+                       .addPropertyNode(name)
+                       .addConstraintViolation();
+                return false;
+            }
+
+            String protocol = url.getProtocol();
+            if (!("http".equalsIgnoreCase(protocol) || "https".equalsIgnoreCase(protocol)) || StringUtils.isBlank(url.getHost())) {
+                context.buildConstraintViolationWithTemplate("Only http and https URLs are supported")
                        .addPropertyNode(name)
                        .addConstraintViolation();
                 return false;
