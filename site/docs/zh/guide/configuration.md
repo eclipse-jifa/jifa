@@ -139,9 +139,9 @@
 
 当其值为 false 时，allow-anonymous-access 将被设置为 true，allow-registration 将被设置为 false。
 
-Type: boolean
+类型：boolean
 
-Default: false
+默认值：false
 
 ## allow-anonymous-access
 
@@ -149,7 +149,7 @@ Default: false
 
 类型：boolean
 
-默认值：ture
+默认值：true
 
 ## allow-registration
 
