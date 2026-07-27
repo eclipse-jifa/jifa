@@ -69,6 +69,14 @@
 
 默认值：从环境变量 `MYSQL_PASSWORD` 中读取，若未设置则为 `jifa`。
 
+## cluster-namespace
+
+集群中使用的命名空间。
+
+类型：String
+
+默认值：`jifa`
+
 ## storage-pvc-name
 
 集群中使用的 PersistentVolumeClaim 名称。
@@ -184,6 +192,31 @@ Default: false
 类型：Path[]
 
 默认值：null
+
+## open-browser-when-ready
+
+服务就绪后是否自动打开浏览器，仅在 `STANDALONE_WORKER` 角色中使用。
+
+类型：boolean
+
+默认值：false
+
+## disabled-file-transfer-methods
+
+禁用的文件传输方式，被禁用的方式不会在文件传输页面中展示。
+
+类型：Enum[]
+
+- `OSS`
+- `S3`
+- `SCP`
+- `URL`
+- `TEXT`
+- `UPLOAD`
+
+默认值：`[SCP]`，由默认配置文件设置。
+
+注意：`URL` 方式仅支持 `http` 和 `https` 协议。
 
 ## 文件上传配置
 
