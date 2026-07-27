@@ -14,7 +14,7 @@ Eclipse Jifa（简称 Jifa）的名字由 “**J**ava **I**ssues **F**inding **A
 
 在设计上，由两部分组成：
 
-- **服务端**： 标准的 SpringBoot 3 应用。
+- **服务端**： 标准的 Spring Boot 4 应用。
 
 - **Web UI**：基于 Vue 3 和 Element Plus 等框架实现。
 
