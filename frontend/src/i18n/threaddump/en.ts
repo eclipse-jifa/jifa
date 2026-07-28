@@ -55,6 +55,7 @@ export default {
     milliseconds: "ms",
     javaThreads: "Java Threads",
     nonJavaThreads: "Non-Java Threads",
+    noCpuData: "This thread dump does not contain CPU usage information.",
   },
 
   // ----- Diagnosis -----

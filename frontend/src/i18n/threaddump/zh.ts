@@ -54,6 +54,7 @@ export default {
     milliseconds: "毫秒",
     javaThreads: "Java 线程",
     nonJavaThreads: "非 Java 线程",
+    noCpuData: "该线程快照文件不包含 CPU 使用信息。",
   },
 
   // ----- 诊断 -----

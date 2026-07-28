@@ -182,7 +182,17 @@ onUnmounted(() => {
 
 <template>
   <div v-loading="loading">
-    <el-collapse :model-value="activeNames" @change="onCollapseChange">
+    <!-- If both Java and non-Java lists are empty show a clear hint to the user -->
+    <template v-if="!loading && javaThreads.length === 0 && nonJavaThreads.length === 0">
+      <el-alert
+        type="info"
+        style="word-break: keep-all"
+        :description="tdt('cpuConsumingThreads.noCpuData')"
+        :closable="false"
+      />
+    </template>
+
+    <el-collapse v-if="javaThreads.length > 0 || nonJavaThreads.length > 0" :model-value="activeNames" @change="onCollapseChange">
       <!-- Java Threads -->
       <el-collapse-item :title="tdt('cpuConsumingThreads.javaThreads')" name="java">
         <div
