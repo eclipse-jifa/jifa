@@ -15,7 +15,7 @@ Currently, Jifa primarily supports the following features:
 
 In terms of the design, Jifa consists of two main parts:
 
-- **Server**: a standard SpringBoot 3 application.
+- **Server**: a standard Spring Boot 4 application.
 
 - **Web UI**: based on Vue 3, Element Plus and other packages.
 

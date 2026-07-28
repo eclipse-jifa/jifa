@@ -70,6 +70,14 @@ Type：String
 
 Default：Read from the environment variable `MYSQL_PASSWORD`, and `jifa` is used if it's not set.
 
+## cluster-namespace
+
+The namespace used in the cluster.
+
+Type: String
+
+Default: `jifa`
+
 ## storage-pvc-name
 
 The name of PersistentVolumeClaim used in the cluster.
@@ -186,6 +194,31 @@ Local files to be analyzed, used only in `STANDALONE_WORKER` role.
 Type: Path[]
 
 Default: null
+
+## open-browser-when-ready
+
+Whether to open the browser automatically when the server is ready, used only in `STANDALONE_WORKER` role.
+
+Type: boolean
+
+Default: false
+
+## disabled-file-transfer-methods
+
+The disabled file transfer methods, which will not be shown on the file transfer page.
+
+Type: Enum[]
+
+- `OSS`
+- `S3`
+- `SCP`
+- `URL`
+- `TEXT`
+- `UPLOAD`
+
+Default: `[SCP]`, set by the default configuration file.
+
+Note: for the `URL` method, only `http` and `https` schemes are supported.
 
 ## File Upload Configuration
 
