@@ -173,6 +173,11 @@ public class Configuration {
      */
     private boolean securityFiltersEnabled = true;
 
+    /**
+     * Whether to enable the experimental MCP endpoint.
+     */
+    private boolean mcpEnabled = false;
+
     @PostConstruct
     private void init() {
         if (role == Role.MASTER) {

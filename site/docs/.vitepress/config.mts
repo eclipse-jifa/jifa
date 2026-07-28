@@ -72,6 +72,12 @@ export default defineConfig({
             ]
           },
           {
+            text: 'Integrations',
+            items: [
+              {text: 'MCP (Experimental)', link: '/guide/mcp'},
+            ]
+          },
+          {
             items: [
               {text: 'Changelog', link: '/guide/changelog.md'},
               {text: 'Contributing', link: '/guide/contributing.md'},
@@ -143,6 +149,12 @@ export default defineConfig({
             items: [
               {text: '部署', link: '/zh/guide/deployment.md'},
               {text: '配置', link: '/zh/guide/configuration.md'},
+            ]
+          },
+          {
+            text: '集成',
+            items: [
+              {text: 'MCP（实验性）', link: '/zh/guide/mcp'},
             ]
           },
           {
