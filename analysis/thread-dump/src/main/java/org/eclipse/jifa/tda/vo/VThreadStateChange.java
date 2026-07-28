@@ -30,4 +30,10 @@ public class VThreadStateChange {
     private int id;
 
     private String name;
+
+    /** {@code null} if the thread is new (only present in the second dump). */
+    private String stateBefore;
+
+    /** {@code null} if the thread disappeared (only present in the first dump). */
+    private String stateAfter;
 }
