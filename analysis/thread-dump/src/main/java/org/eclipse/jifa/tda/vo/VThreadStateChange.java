@@ -22,32 +22,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Represents a thread whose Java state changed between two thread dumps,
- * matched by native thread id (nid).
- * <p>
- * {@code stateBefore} or {@code stateAfter} can be {@code null} to indicate
- * that the thread was absent in that dump (new or disappeared thread).
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class VThreadStateChange {
 
-    /** Native thread ID from the first dump; -1 for threads only in dump 2. */
     private int id;
 
     private String name;
-
-    /**
-     * Java state in the first (earlier) dump.
-     * {@code null} if the thread did not exist in dump 1 (newly appeared thread).
-     */
-    private String stateBefore;
-
-    /**
-     * Java state in the second (later) dump.
-     * {@code null} if the thread no longer exists in dump 2 (disappeared thread).
-     */
-    private String stateAfter;
 }

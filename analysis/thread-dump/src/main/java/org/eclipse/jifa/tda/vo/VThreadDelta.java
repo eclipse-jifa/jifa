@@ -22,26 +22,18 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Represents the CPU delta of a thread between two thread dumps,
- * matched by native thread id (nid).
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class VThreadDelta {
 
-    /** Internal thread id (from the first dump). */
     private int id;
 
     private String name;
 
-    /** CPU time in the first (earlier) dump, in milliseconds. */
     private double cpuFirst;
 
-    /** CPU time in the second (later) dump, in milliseconds. */
     private double cpuSecond;
 
-    /** Delta: cpuSecond - cpuFirst, in milliseconds. Positive means more CPU consumed. */
     private double cpuDelta;
 }

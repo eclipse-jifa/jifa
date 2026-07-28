@@ -23,76 +23,41 @@ import lombok.Data;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Result of a multi-dump comparison (2–4 dumps).
- * <p>
- * {@code dumpOverviews} is ordered: index 0 = primary dump, 1..N = others.
- * {@code threadRows} contains one entry per unique NID seen across all dumps.
- */
 @Data
 public class VMultiDumpComparison {
 
-    /**
-     * One summary per dump, in the same order as the input.
-     */
     private List<DumpSummary> dumpOverviews;
 
-    /**
-     * One row per unique thread (matched by native thread ID).
-     * Rows are sorted by "most interesting" first:
-     * threads that appear in all dumps and changed state, then partial matches.
-     */
+    /** One row per unique thread (matched by NID). */
     private List<ThreadRow> threadRows;
 
-    // ── Nested types ──────────────────────────────────────────────────────────
-
-    /**
-     * Lightweight overview of a single dump used in multi-dump comparisons.
-     */
     @Data
     public static class DumpSummary {
 
-        /** Display name (original file name). */
+        /** Original file name. */
         private String name;
 
-        /** Total Java thread count. */
         private int threadCount;
 
-        /** Number of deadlocked threads (0 if none detected). */
         private int deadLockCount;
 
-        /**
-         * Java thread state distribution: state name → count.
-         * Only states with count > 0 are included.
-         */
+        /** Java thread state distribution (state → count); only non-zero entries. */
         private Map<String, Integer> stateCounts;
     }
 
-    /**
-     * One row per unique thread across all compared dumps.
-     */
     @Data
     public static class ThreadRow {
 
         /** Thread name (from the first dump where this NID appears). */
         private String name;
 
-        /**
-         * Java state per dump, in the same order as {@link #dumpOverviews}.
-         * {@code null} means the thread was not present in that dump.
-         */
+        /** Java state per dump (same order as {@link VMultiDumpComparison#dumpOverviews}); {@code null} = not present. */
         private List<String> states;
 
-        /**
-         * {@code true} if the thread appears in every dump with state
-         * {@code BLOCKED_ON_MONITOR_ENTER} – i.e. persistently blocked.
-         */
+        /** {@code true} if blocked ({@code BLOCKED_ON_MONITOR_ENTER}) in every dump. */
         private boolean alwaysBlocked;
 
-        /**
-         * {@code true} if the thread changed its Java state at least once
-         * across consecutive dump pairs.
-         */
+        /** {@code true} if the thread state changed in any consecutive dump pair. */
         private boolean stateChanged;
     }
 }

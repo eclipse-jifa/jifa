@@ -22,29 +22,19 @@ import lombok.Data;
 
 import java.util.List;
 
-/**
- * A single search result containing a thread that matched the search query,
- * along with the raw content lines of that thread's stack trace.
- */
 @Data
 public class SearchHit {
 
-    /** Internal thread id (maps to thread detail view). */
     private int id;
 
-    /** Display name of the thread. */
     private String name;
 
-    /** Java thread state string (may be null for non-Java threads). */
     private String javaState;
 
-    /** OS thread state string. */
     private String osState;
 
-    /** CPU time in milliseconds (0 if not available). */
     private double cpu;
 
-    /** Elapsed time in milliseconds (0 if not available). */
     private double elapsed;
 
     /**

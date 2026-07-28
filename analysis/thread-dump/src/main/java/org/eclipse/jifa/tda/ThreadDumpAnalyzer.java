@@ -414,20 +414,7 @@ public class ThreadDumpAnalyzer {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Computes which threads consumed the most CPU <em>between</em> two thread
-     * dumps by matching threads via their native thread id ({@code nid}).
-     *
-     * <p>Only threads present in both dumps with valid CPU data ({@code cpu > 0})
-     * in the second dump are included. A positive {@code cpuDelta} means the thread
-     * consumed more CPU in the second dump.
-     *
-     * @param other the path of the second (later) thread dump, resolved via the
-     *              comparison-target mechanism (pass {@code uniqueName} from the frontend)
-     * @param type  limit to threads of this type; {@code null} means all types
-     * @param max   maximum number of results; {@code -1} means unlimited
-     * @return threads sorted by CPU delta descending
-     */
+    /** Returns threads with the highest CPU delta between two dumps (matched by NID), descending. */
     public List<VThreadDelta> cpuConsumingThreadsCompare(@ApiParameterMeta(comparisonTargetPath = true) Path other,
                                                           @ApiParameterMeta(required = false) ThreadType type,
                                                           int max) {
@@ -663,20 +650,7 @@ public class ThreadDumpAnalyzer {
                 .orElse(null);
     }
 
-    /**
-     * Compares the Java thread states of threads present in both dumps by
-     * matching via native thread id (nid) and returns entries for:
-     * <ul>
-     *   <li>Threads whose Java state <em>changed</em> between the two dumps.</li>
-     *   <li>Threads that are new in the second dump (not present in the first).</li>
-     *   <li>Threads that disappeared (present in the first but not in the second).</li>
-     * </ul>
-     * Non-Java threads (without a Java state) are excluded.
-     *
-     * @param other the path of the second (later) thread dump
-     * @return list sorted by: state-changed first, then new, then disappeared;
-     *         within each group sorted by thread name
-     */
+    /** Returns state-changed, new, and disappeared threads between two dumps (matched by NID). */
     public List<VThreadStateChange> threadStateChanges(
             @ApiParameterMeta(comparisonTargetPath = true) Path other) {
         if (other == null) {
@@ -691,7 +665,7 @@ public class ThreadDumpAnalyzer {
 
         List<VThreadStateChange> result = new ArrayList<>();
 
-        // Threads present in both dumps
+        // threads present in both dumps
         for (JavaThread first : snapshot.getJavaThreads()) {
             if (first.getJavaThreadState() == null) continue;
             JavaThread second = secondByNid.get(first.getNid());
@@ -710,7 +684,7 @@ public class ThreadDumpAnalyzer {
             }
         }
 
-        // Threads only in the second dump (new threads)
+        // threads only in the second dump
         for (JavaThread second : otherAnalyzer.snapshot.getJavaThreads()) {
             if (second.getJavaThreadState() == null) continue;
             if (!firstByNid.containsKey(second.getNid())) {
@@ -720,7 +694,7 @@ public class ThreadDumpAnalyzer {
             }
         }
 
-        // Sort: changed first, then new (appeared), then disappeared; within groups by name
+        // sort: changed → disappeared → new, then by name
         result.sort(Comparator
                 .<VThreadStateChange, Integer>comparing(e -> {
                     if (e.getStateBefore() != null && e.getStateAfter() != null) return 0; // changed
@@ -731,16 +705,7 @@ public class ThreadDumpAnalyzer {
         return result;
     }
 
-    /**
-     * Returns threads that are blocked on a monitor ({@code BLOCKED_ON_MONITOR_ENTER})
-     * in <em>both</em> dumps, matched via native thread id (nid).
-     * <p>
-     * A thread appearing in this list is a persistent blocker — it was not just
-     * briefly contended but still blocked when the second dump was taken.
-     *
-     * @param other the path of the second (later) thread dump
-     * @return threads blocked in both dumps, sorted by thread name
-     */
+    /** Returns threads blocked ({@code BLOCKED_ON_MONITOR_ENTER}) in both dumps (matched by NID). */
     public List<VThread> persistentBlockers(
             @ApiParameterMeta(comparisonTargetPath = true) Path other) {
         if (other == null) {
@@ -761,26 +726,12 @@ public class ThreadDumpAnalyzer {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Compares this dump against up to three additional dumps in a single call,
-     * returning a unified matrix view: one row per unique thread (matched by NID),
-     * one column per dump.
-     *
-     * <p>This is the preferred API for analysing thread-dump series (e.g. dumps
-     * taken at t0, t1, t2, t3). Up to three {@code other} parameters are accepted;
-     * unused slots should be omitted by the caller.
-     *
-     * @param other1 second dump (required)
-     * @param other2 third  dump (optional, pass {@code null} to omit)
-     * @param other3 fourth dump (optional, pass {@code null} to omit)
-     * @return unified multi-dump comparison result
-     */
+    /** Compares up to four dumps; returns a matrix view with one row per unique thread (by NID). */
     public VMultiDumpComparison compareMultiple(
             @ApiParameterMeta(comparisonTargetPath = true)           Path other1,
             @ApiParameterMeta(required = false, comparisonTargetPath = true) Path other2,
             @ApiParameterMeta(required = false, comparisonTargetPath = true) Path other3) {
 
-        // Build list of analyzers: primary + up to 3 others
         List<ThreadDumpAnalyzer> analyzers = new ArrayList<>();
         analyzers.add(this);
         analyzers.add(build(other1, ProgressListener.NoOpProgressListener));
@@ -789,7 +740,7 @@ public class ThreadDumpAnalyzer {
 
         int n = analyzers.size();
 
-        // ── DumpSummary per dump ──────────────────────────────────────────────
+
         List<VMultiDumpComparison.DumpSummary> summaries = new ArrayList<>();
         for (ThreadDumpAnalyzer a : analyzers) {
             VMultiDumpComparison.DumpSummary s = new VMultiDumpComparison.DumpSummary();
@@ -811,9 +762,7 @@ public class ThreadDumpAnalyzer {
             summaries.add(s);
         }
 
-        // ── Collect all NIDs across all dumps ─────────────────────────────────
         // NID → [name, state in dump 0, state in dump 1, ...]
-        // Use LinkedHashMap to preserve insertion order (primary dump first)
         Map<Long, String[]> matrix = new LinkedHashMap<>();
 
         for (int i = 0; i < n; i++) {
@@ -836,7 +785,7 @@ public class ThreadDumpAnalyzer {
             }
         }
 
-        // ── Build ThreadRow list ──────────────────────────────────────────────
+
         final String BLOCKED = String.valueOf(JavaThreadState.BLOCKED_ON_MONITOR_ENTER);
         List<VMultiDumpComparison.ThreadRow> rows = new ArrayList<>();
 
@@ -867,7 +816,7 @@ public class ThreadDumpAnalyzer {
             rows.add(row);
         }
 
-        // Sort: alwaysBlocked first, then stateChanged, then rest; by name within groups
+        // sort: alwaysBlocked first, then stateChanged, then rest; by name within groups
         rows.sort(Comparator
                 .<VMultiDumpComparison.ThreadRow, Integer>comparing(r -> {
                     if (r.isAlwaysBlocked()) return 0;
