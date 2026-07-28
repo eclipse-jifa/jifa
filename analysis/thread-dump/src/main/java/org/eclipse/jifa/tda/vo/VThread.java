@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2022 Contributors to the Eclipse Foundation
+ * Copyright (c) 2022, 2023 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -13,12 +13,26 @@
 
 package org.eclipse.jifa.tda.vo;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class VThread {
 
     private int id;
 
     private String name;
+
+    /**
+     * CPU time in milliseconds; {@code null} if unknown / not available.
+     */
+    private Double cpu;
+
+    /**
+     * Elapsed (wall-clock) time in milliseconds; {@code null} if unknown.
+     */
+    private Double elapsed;
 }

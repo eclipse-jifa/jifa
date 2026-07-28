@@ -23,6 +23,14 @@ const props = defineProps({
   type: {
     type: String,
     required: false
+  },
+  threadState: {
+    type: String,
+    required: false
+  },
+  ids: {
+    type: Array as () => number[],
+    required: false
   }
 });
 
@@ -61,6 +69,7 @@ function loadThreads() {
   loading.value = true;
   let groupName = props.groupName;
   let type = props.type;
+  let ids = props.ids;
   let paging = {
     page: page.value,
     pageSize
@@ -75,6 +84,8 @@ function loadThreads() {
       : {
           type,
           name: name.value,
+          threadState: props.threadState,
+          ids: ids && ids.length > 0 ? ids : undefined,
           ...paging
         }
   ).then((pageView) => {

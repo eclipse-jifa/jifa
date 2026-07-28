@@ -28,15 +28,24 @@ import Content from '@/components/threaddump/Content.vue';
 import Thread from '@/components/threaddump/Thread.vue';
 import Monitor from '@/components/threaddump/Monitor.vue';
 import CallSiteTree from '@/components/threaddump/CallSiteTree.vue';
+import Diagnose from '@/components/threaddump/Diagnose.vue';
+import CpuConsumingThreads from '@/components/threaddump/CpuConsumingThreads.vue';
+import BlockedThreads from '@/components/threaddump/BlockedThreads.vue';
+import ThreadDumpSearch from '@/components/threaddump/ThreadDumpSearch.vue';
+import { stateTagStyle } from '@/components/threaddump/thread-state-colors';
 
 const { request } = useAnalysisApiRequester();
 
 const activeNames = ref<string[]>([
   'basicInfo',
+  'diagnosis',
   'threadSummary',
   'threadGroupSummary',
+  'blockedThreads',
+  'cpuConsumingThreads',
   'javaMonitors',
-  'callSiteTree'
+  'callSiteTree',
+  'threadSearch',
 ]);
 
 const deadLockCount = ref(0);
@@ -65,6 +74,7 @@ const loading = ref(false);
 const threadDialogVisible = ref(false);
 const selectedThreadType = ref();
 const selectedThreadGroup = ref();
+const selectedThreadState = ref();
 
 function sum(arr) {
   return arr.reduce((l, r) => l + r);
@@ -83,12 +93,28 @@ function sortIndices(counts) {
 function showThreads(type) {
   selectedThreadType.value = type;
   selectedThreadGroup.value = null;
+  selectedThreadState.value = null;
   threadDialogVisible.value = true;
 }
 
 function showThreadsOfGroup(group) {
   selectedThreadGroup.value = group;
   selectedThreadType.value = null;
+  selectedThreadState.value = null;
+  threadDialogVisible.value = true;
+}
+
+function showThreadsByState(threadType, state) {
+  selectedThreadType.value = threadType;
+  selectedThreadGroup.value = null;
+  selectedThreadState.value = state;
+  threadDialogVisible.value = true;
+}
+
+function showThreadsOfGroupByState(group, state) {
+  selectedThreadGroup.value = group;
+  selectedThreadType.value = null;
+  selectedThreadState.value = state;
   threadDialogVisible.value = true;
 }
 
@@ -120,16 +146,16 @@ onMounted(() => {
       }
     ];
 
-    function buildThreadStat(key, states, counts, icon, threadType?) {
-      return {
-        key,
-        value: sum(counts),
-        states,
-        counts,
-        icon: shallowRef(icon),
-        threadType
-      };
-    }
+function buildThreadStat(key, states, counts, icon, threadType?) {
+  return {
+    key,
+    value: sum(counts),
+    states,
+    counts,
+    icon: shallowRef(icon),
+    threadType
+  };
+}
 
     let _threadStats = [
       buildThreadStat(
@@ -170,20 +196,36 @@ onMounted(() => {
     _threadStats.sort((i, j) => j.value - i.value);
     _threadGroupStats.sort((i, j) => j.value - i.value);
 
+    // The total row merges the per-type distributions so that each state tag
+    // is consistent with the state used by the backend when filtering threads
+    // (Java state for Java threads, OS state for the others).
+    let mergedCounts = new Map();
+    for (let stat of _threadStats) {
+      stat.states.forEach((state, i) => {
+        if (stat.counts[i] > 0) {
+          mergedCounts.set(state, (mergedCounts.get(state) || 0) + stat.counts[i]);
+        }
+      });
+    }
     _threadStats.push(
-      buildThreadStat('total', overview.states, overview.threadStat.counts, Histogram)
+      buildThreadStat('total', [...mergedCounts.keys()], [...mergedCounts.values()], Histogram)
     );
 
     threadStats.value = _threadStats;
     threadGroupStats.value = _threadGroupStats;
+
     loading.value = false;
   });
 });
 </script>
 <template>
   <div class="ej-common-view-div" v-loading="loading">
-    <el-dialog v-model="threadDialogVisible">
-      <Thread :type="selectedThreadType" :group-name="selectedThreadGroup" />
+    <el-dialog v-model="threadDialogVisible" width="80%" destroy-on-close>
+      <Thread
+        :type="selectedThreadType"
+        :group-name="selectedThreadGroup"
+        :thread-state="selectedThreadState"
+      />
     </el-dialog>
 
     <el-scrollbar>
@@ -205,20 +247,24 @@ onMounted(() => {
             </el-table>
           </el-collapse-item>
 
+          <el-collapse-item name="diagnosis" :title="tdt('diagnosis.title')">
+            <Diagnose />
+          </el-collapse-item>
+
           <el-collapse-item name="threadSummary" :title="tdt('threadSummary')">
             <el-table stripe :show-header="false" :data="threadStats" v-loading="loading">
               <el-table-column type="expand">
                 <template #default="{ row }">
-                  <div style="padding: 4px 12px">
-                    <el-space size="large">
-                      <el-tag
-                        disable-transitions
-                        v-for="index in sortIndices(row.counts)"
-                        :key="index"
-                      >
-                        {{ `${row.states[index]}: ${row.counts[index]}` }}
-                      </el-tag>
-                    </el-space>
+                  <div style="padding: 6px 12px; display: flex; flex-wrap: wrap; gap: 6px">
+                    <el-tag
+                      v-for="idx in sortIndices(row.counts)"
+                      :key="idx"
+                      :style="{ cursor: 'pointer', ...stateTagStyle(row.states[idx]) }"
+                      disable-transitions
+                      @click="showThreadsByState(row.threadType, row.states[idx])"
+                    >
+                      {{ row.states[idx] }}&nbsp;{{ row.counts[idx] }}
+                    </el-tag>
                   </div>
                 </template>
               </el-table-column>
@@ -256,16 +302,16 @@ onMounted(() => {
             >
               <el-table-column type="expand">
                 <template #default="{ row }">
-                  <div style="padding: 4px 12px">
-                    <el-space size="large">
-                      <el-tag
-                        disable-transitions
-                        v-for="index in sortIndices(row.counts)"
-                        :key="index"
-                      >
-                        {{ `${row.states[index]}: ${row.counts[index]}` }}
-                      </el-tag>
-                    </el-space>
+                  <div style="padding: 6px 12px; display: flex; flex-wrap: wrap; gap: 6px">
+                    <el-tag
+                      v-for="idx in sortIndices(row.counts)"
+                      :key="idx"
+                      :style="{ cursor: 'pointer', ...stateTagStyle(row.states[idx]) }"
+                      disable-transitions
+                      @click="showThreadsOfGroupByState(row.key, row.states[idx])"
+                    >
+                      {{ row.states[idx] }}&nbsp;{{ row.counts[idx] }}
+                    </el-tag>
                   </div>
                 </template>
               </el-table-column>
@@ -290,8 +336,20 @@ onMounted(() => {
             </div>
           </el-collapse-item>
 
-          <el-collapse-item name="javaMonitors" title="Java Monitors">
+          <el-collapse-item name="javaMonitors" :title="tdt('monitors')">
             <Monitor />
+          </el-collapse-item>
+
+          <el-collapse-item name="blockedThreads" :title="tdt('blockedThreadsLabel')">
+            <BlockedThreads />
+          </el-collapse-item>
+
+          <el-collapse-item name="cpuConsumingThreads" :title="tdt('cpuConsumingThreadsLabel')">
+            <CpuConsumingThreads />
+          </el-collapse-item>
+
+          <el-collapse-item name="threadSearch" :title="tdt('threadDumpSearch.label')">
+            <ThreadDumpSearch />
           </el-collapse-item>
 
           <el-collapse-item name="callSiteTree" :title="tdt('callSiteTree')">

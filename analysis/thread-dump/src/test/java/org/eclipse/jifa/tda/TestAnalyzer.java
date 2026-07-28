@@ -36,7 +36,7 @@ public class TestAnalyzer extends TestBase {
         Assertions.assertEquals(o1, o2);
         Assertions.assertEquals(o1.hashCode(), o2.hashCode());
 
-        PageView<VThread> threads = tda.threads("main", ThreadType.JAVA, new PagingRequest(1, 1));
+        PageView<VThread> threads = tda.threads("main", ThreadType.JAVA, null, null, new PagingRequest(1, 1));
         Assertions.assertEquals(1, threads.getTotalSize());
 
         PageView<VFrame> frames = tda.callSiteTree(0, new PagingRequest(1, 16));

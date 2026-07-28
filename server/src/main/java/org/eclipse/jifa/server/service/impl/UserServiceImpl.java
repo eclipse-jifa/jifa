@@ -108,8 +108,12 @@ public class UserServiceImpl extends ConfigurationAccessor implements UserServic
             return jwtService.generateToken(optional.get().getUser());
         }
 
-        // TODO
-        String name = token.getPrincipal().getAttribute("name").toString();
+        // Derive a display name from common OIDC claims (Keycloak: preferred_username / name / sub)
+        Object nameClaim = token.getPrincipal().getAttribute("name");
+        if (nameClaim == null) {
+            nameClaim = token.getPrincipal().getAttribute("preferred_username");
+        }
+        String name = nameClaim != null ? nameClaim.toString() : principalName;
 
         ExternalLoginDataEntity externalLoginData = new ExternalLoginDataEntity();
         externalLoginData.setMethod(ExternalLoginMethod.OAUTH2);

@@ -29,9 +29,103 @@ export default {
   gcThread: "GC Thread",
   otherThread: "Other Thread",
   total: "Total",
+  monitors: "Java Monitors",
   callSiteTree: "Call Site Tree",
   fileContent: "File Content",
   loadFileContent: "Load",
   loadMoreFileContent: "Load More",
   threadNameLabel: "Thread Name",
+
+  // ----- Blocked Threads -----
+  blockedThreadsLabel: "Blocked Threads",
+  blockedThreads: {
+    // {blocker} = name of the blocking thread, {count} = number of blocked threads
+    title: "{blocker} is blocking 1 thread | {blocker} is blocking {count} threads",
+    none: "No blocked threads found",
+  },
+
+  // ----- CPU Consuming Threads -----
+  cpuConsumingThreadsLabel: "CPU Consuming Threads",
+  cpuConsumingThreads: {
+    title: "Top CPU consuming threads",
+    cpuConsumptionLabel: "CPU consumption",
+    hours: "hours",
+    minutes: "minutes",
+    seconds: "seconds",
+    milliseconds: "ms",
+    javaThreads: "Java Threads",
+    nonJavaThreads: "Non-Java Threads",
+    noCpuData: "This thread dump does not contain CPU usage information.",
+  },
+
+  // ----- Diagnosis -----
+  diagnosis: {
+    title: "Diagnosis",
+    examine: "Examine",
+    messageColumn: "Message",
+    fileColumn: "File",
+    suggestionColumn: "Suggestion",
+    type: {
+      // {count} = number of affected threads, {name} = thread name (singular only)
+      // {threshold} = configured threshold value
+      NO_ISSUES: "No issues found",
+      NO_ISSUES_SUGGESTION: "",
+
+      DEADLOCK: "{count} threads are in a deadlock",
+      DEADLOCK_SUGGESTION:
+        "Deadlocks happen when two or more threads are waiting for each other indefinitely. " +
+        "They are caused by incorrect ordering of resource locking.",
+
+      HIGH_BLOCKED_THREAD_COUNT: "1 thread is blocked | {count} threads are blocked",
+      HIGH_BLOCKED_THREAD_COUNT_SUGGESTION:
+        "A large number of blocked threads often indicates a bottleneck. " +
+        "Examine the stack traces and review locking and synchronisation.",
+
+      HIGH_THREAD_COUNT: "{count} is a high thread count",
+      HIGH_THREAD_COUNT_SUGGESTION:
+        "Such high thread counts can lead to memory exhaustion and thread starvation. " +
+        "Look for thread leaks or consider using thread pools to reduce thread creation.",
+
+      HIGH_STACK_SIZE: "{name} has a very large stack (> {threshold} frames) | {count} threads have a very large stack (> {threshold} frames)",
+      HIGH_STACK_SIZE_SUGGESTION:
+        "Large stack sizes can lead to StackOverflowError and decreased performance. " +
+        "Check for excessive recursion.",
+
+      HIGH_CPU_RATIO: "{name} has a high CPU ratio | {count} threads have a high CPU ratio",
+      HIGH_CPU_RATIO_SUGGESTION:
+        "A high CPU ratio means a thread is consuming large amounts of CPU over its lifetime. " +
+        "This is not necessarily bad, but marks very active threads worth investigating.",
+
+      THREAD_THROWING_EXCEPTION: "{name} is throwing an exception | {count} threads are throwing exceptions",
+      THREAD_THROWING_EXCEPTION_SUGGESTION:
+        "A thread throwing an exception may indicate an issue in the application. " +
+        "Keep in mind that creating stack traces is expensive – frequent exceptions can impact performance.",
+    },
+  },
+
+  // ----- Thread Search -----
+  threadDumpSearch: {
+    label: "Find Threads",
+    searchTitle: "Find Threads",
+    searchPlaceholder: "Enter keywords to match thread names, states and stack traces",
+    searchInput: "Search term",
+    requiredMessage: "Please enter a search term",
+    advancedToggle: "More Options",
+    matchFields: "Match Fields",
+    matchFieldName: "Thread Name",
+    matchFieldState: "Thread State",
+    matchFieldStack: "Stack Trace",
+    otherOptions: "Other",
+    searchOptionRegex: "Regular Expression",
+    searchOptionMatchCase: "Match Case",
+    searchOptionThreadStates: "Filter States",
+    searchOptionThreadStatesPlaceholder: "All states",
+    threadStatesChartTitle: "Thread States",
+    resultsCount: "threads found",
+    threadNameLabel: "Thread",
+    stateLabel: "State",
+    cpuLabel: "CPU Time",
+    elapsedLabel: "Elapsed",
+  },
+
 }

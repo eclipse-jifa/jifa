@@ -29,9 +29,94 @@ export default {
   gcThread: "GC Thread",
   otherThread: "Other Thread",
   total: "Total",
+  monitors: "Java 同步器",
   callSiteTree: "调用栈",
   fileContent: "文件内容",
   loadFileContent: "加载",
   loadMoreFileContent: "加载更多",
   threadNameLabel: "线程名",
+
+  // ----- 阻塞线程 -----
+  blockedThreadsLabel: "阻塞线程",
+  blockedThreads: {
+    title: "{blocker} 阻塞了 1 个线程 | {blocker} 阻塞了 {count} 个线程",
+    none: "没有发现被阻塞的线程",
+  },
+
+  // ----- CPU 耗时线程 -----
+  cpuConsumingThreadsLabel: "CPU 耗时线程",
+  cpuConsumingThreads: {
+    title: "展示最高 CPU 耗时线程",
+    cpuConsumptionLabel: "CPU 耗时",
+    hours: "小时",
+    minutes: "分钟",
+    seconds: "秒",
+    milliseconds: "毫秒",
+    javaThreads: "Java 线程",
+    nonJavaThreads: "非 Java 线程",
+    noCpuData: "该线程快照文件不包含 CPU 使用信息。",
+  },
+
+  // ----- 诊断 -----
+  diagnosis: {
+    title: "诊断",
+    examine: "检查",
+    messageColumn: "消息",
+    fileColumn: "文件",
+    suggestionColumn: "建议",
+    type: {
+      NO_ISSUES: "没有发现问题",
+      NO_ISSUES_SUGGESTION: "",
+
+      DEADLOCK: "{count} 个线程发生死锁",
+      DEADLOCK_SUGGESTION:
+        "死锁发生在两个或更多线程无限期地等待对方时，通常由资源加锁顺序错误引起。",
+
+      HIGH_BLOCKED_THREAD_COUNT: "1 个线程被阻塞 | {count} 个线程被阻塞",
+      HIGH_BLOCKED_THREAD_COUNT_SUGGESTION:
+        "大量线程阻塞通常意味着系统存在瓶颈，请检查调用栈和同步加锁代码。",
+
+      HIGH_THREAD_COUNT: "线程数 {count} 过高",
+      HIGH_THREAD_COUNT_SUGGESTION:
+        "如此高的线程数可能导致内存耗尽和线程饥饿，请查找线程泄漏或考虑使用线程池减少线程创建。",
+
+      HIGH_STACK_SIZE: "{name} 的调用栈非常深（> {threshold} 帧） | {count} 个线程调用栈非常深（> {threshold} 帧）",
+      HIGH_STACK_SIZE_SUGGESTION:
+        "调用栈过深可能导致 StackOverflowError 并降低性能，请检查是否存在过深的递归。",
+
+      HIGH_CPU_RATIO: "{name} 的 CPU 占用率较高 | {count} 个线程的 CPU 占用率较高",
+      HIGH_CPU_RATIO_SUGGESTION:
+        "CPU 占用率高意味着该线程在其生命周期中消耗了大量 CPU，不一定是问题，但值得关注。",
+
+      THREAD_THROWING_EXCEPTION: "{name} 正在抛出异常 | {count} 个线程正在抛出异常",
+      THREAD_THROWING_EXCEPTION_SUGGESTION:
+        "正在抛出异常的线程可能表明应用程序存在问题。请注意，创建堆栈跟踪开销很大，频繁抛出异常会影响性能。",
+    },
+  },
+
+  // ----- Thread Search -----
+  threadDumpSearch: {
+    label: "查找线程",
+    searchTitle: "查找线程",
+    searchPlaceholder: "输入关键字，可匹配线程名、状态和调用栈",
+    searchInput: "搜索词",
+    requiredMessage: "请输入搜索词",
+    advancedToggle: "更多选项",
+    matchFields: "匹配字段",
+    matchFieldName: "线程名称",
+    matchFieldState: "线程状态",
+    matchFieldStack: "调用栈",
+    otherOptions: "其他",
+    searchOptionRegex: "正则表达式",
+    searchOptionMatchCase: "区分大小写",
+    searchOptionThreadStates: "状态过滤",
+    searchOptionThreadStatesPlaceholder: "所有状态",
+    threadStatesChartTitle: "线程状态",
+    resultsCount: "个线程匹配",
+    threadNameLabel: "线程",
+    stateLabel: "状态",
+    cpuLabel: "CPU 耗时",
+    elapsedLabel: "运行时长",
+  },
+
 }

@@ -16,6 +16,31 @@ jifa:
   database-user: ${MYSQL_USER:jifa}
   database-password: ${MYSQL_PASSWORD:jifa}
   disabled-file-transfer-methods: [ scp ]
+  # Set to true to enable login/authentication. Required for OAuth2/OIDC.
+  allow-login: ${JIFA_ALLOW_LOGIN:false}
+  allow-anonymous-access: ${JIFA_ALLOW_ANONYMOUS_ACCESS:true}
+  allow-registration: ${JIFA_ALLOW_REGISTRATION:false}
+
+# Keycloak OIDC – configure via environment variables in production:
+#   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_ID
+#   SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_SECRET
+#   SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI
+#
+# Example (uncomment and fill in for local dev):
+# spring:
+#   security:
+#     oauth2:
+#       client:
+#         registration:
+#           keycloak:
+#             client-id: jifa
+#             client-secret: <your-secret>
+#             scope: openid, profile, email
+#             authorization-grant-type: authorization_code
+#             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+#         provider:
+#           keycloak:
+#             issuer-uri: https://your-keycloak.example.com/realms/your-realm
 
 spring:
   servlet:
