@@ -92,6 +92,7 @@ export default {
     deltaPositive: "增加",
     deltaNegative: "减少",
     noFilesSelected: "请选择两个线程 Dump 文件进行对比",
+    loadingFiles: "正在加载文件...",
     noFilesAvailable: "未找到线程 Dump 文件",
     noFilesAvailableHint: "请先上传线程 Dump 文件，然后再进行比较。",
     uploadNow: "立即上传",

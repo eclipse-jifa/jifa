@@ -93,6 +93,7 @@ export default {
     deltaPositive: "increased",
     deltaNegative: "decreased",
     noFilesSelected: "Select two thread dump files to compare",
+    loadingFiles: "Loading files...",
     noFilesAvailable: "No thread dump files found",
     noFilesAvailableHint: "Upload a thread dump file first to start comparing.",
     uploadNow: "Upload now",

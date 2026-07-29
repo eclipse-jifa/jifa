@@ -106,7 +106,7 @@ async function loadFiles() {
       });
       const items: FileEntry[] = resp.data.data ?? [];
       all.push(...items);
-      if (all.length >= (resp.data.totalSize ?? 0) || items.length < pageSize) break;
+      if (all.length >= (resp.data.totalSize ?? Infinity) || items.length < pageSize) break;
       page++;
     }
     availableFiles.value = all;
@@ -193,8 +193,8 @@ const groupRows = computed((): GroupRow[] => {
   const allKeys = new Set([...Object.keys(o1.threadGroupStat), ...Object.keys(o2.threadGroupStat)]);
   const rows: GroupRow[] = [];
   allKeys.forEach(k => {
-    const c1 = o1.threadGroupStat[k] ? sum(o1.threadGroupStat[k].counts) : 0;
-    const c2 = o2.threadGroupStat[k] ? sum(o2.threadGroupStat[k].counts) : 0;
+    const c1 = o1.threadGroupStat[k]?.counts ? sum(o1.threadGroupStat[k].counts) : 0;
+    const c2 = o2.threadGroupStat[k]?.counts ? sum(o2.threadGroupStat[k].counts) : 0;
     rows.push({ name: k, count1: c1, count2: c2, delta: c2 - c1 });
   });
   rows.sort((a, b) => Math.max(b.count1, b.count2) - Math.max(a.count1, a.count2));
@@ -221,9 +221,9 @@ async function runCompare() {
 // ── Init ─────────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
-  await loadFiles();
-  // Pre-fill file1 from query param (e.g. when navigating from single dump view)
+  // Capture query param before async load to avoid race with route changes
   const preselect = route.query.file1 as string | undefined;
+  await loadFiles();
   if (preselect && availableFiles.value.some(f => f.uniqueName === preselect)) {
     file1.value = preselect;
   }
@@ -281,8 +281,10 @@ onMounted(async () => {
 
         <!-- ── Empty state ──────────────────────────────────────────────── -->
         <template v-if="!compared && !loading">
+          <!-- Files still loading -->
+          <el-empty v-if="filesLoading" :description="tdt('threadDumpCompare.loadingFiles')" style="margin-top: 60px" />
           <!-- No files at all -->
-          <div v-if="!filesLoading && availableFiles.length === 0" class="empty-state">
+          <div v-else-if="availableFiles.length === 0" class="empty-state">
             <el-icon class="empty-icon"><UploadFilled /></el-icon>
             <p class="empty-title">{{ tdt('threadDumpCompare.noFilesAvailable') }}</p>
             <p class="empty-hint">{{ tdt('threadDumpCompare.noFilesAvailableHint') }}</p>
@@ -292,7 +294,7 @@ onMounted(async () => {
           </div>
           <!-- Files available, nothing selected yet -->
           <el-empty
-            v-else-if="!filesLoading"
+            v-else
             :description="tdt('threadDumpCompare.noFilesSelected')"
             style="margin-top: 60px"
           />
