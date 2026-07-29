@@ -15,6 +15,7 @@ package org.eclipse.jifa.tda.util;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.ParsePosition;
 import java.util.Locale;
 
 public class Converter {
@@ -50,16 +51,18 @@ public class Converter {
         try {
             return Double.parseDouble(clean);
         } catch (NumberFormatException ignore) {
-            // Fallback: parse with explicit DecimalFormatSymbols to handle comma decimal
-            try {
-                DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.ROOT);
-                symbols.setDecimalSeparator(',');  // Accept comma as decimal separator
-                DecimalFormat df = new DecimalFormat("#.##", symbols);
-                df.setParseBigDecimal(false);
-                return df.parse(clean).doubleValue();
-            } catch (Exception ex) {
-                throw new IllegalArgumentException("Cannot parse '" + s + "' as a number", ex);
+            // Fallback: comma = decimal separator, dot = grouping (thousands) separator
+            DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.ROOT);
+            symbols.setDecimalSeparator(',');
+            symbols.setGroupingSeparator('.');
+            DecimalFormat df = new DecimalFormat("#,##0.##", symbols);
+            df.setParseBigDecimal(false);
+            ParsePosition pos = new ParsePosition(0);
+            Number n = df.parse(clean, pos);
+            if (n != null && pos.getIndex() == clean.length()) {
+                return n.doubleValue();
             }
+            throw new IllegalArgumentException("Cannot parse '" + s + "' as a number");
         }
     }
 }
