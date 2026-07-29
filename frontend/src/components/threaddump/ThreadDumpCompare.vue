@@ -97,10 +97,19 @@ const file2Name = computed(() => availableFiles.value.find(f => f.uniqueName ===
 async function loadFiles() {
   filesLoading.value = true;
   try {
-    const resp = await axios.get('/jifa-api/files', {
-      params: { type: 'THREAD_DUMP', page: 1, pageSize: 200 }
-    });
-    availableFiles.value = resp.data.data ?? [];
+    const pageSize = 50;
+    let page = 1;
+    const all: FileEntry[] = [];
+    while (true) {
+      const resp = await axios.get('/jifa-api/files', {
+        params: { type: 'THREAD_DUMP', page, pageSize }
+      });
+      const items: FileEntry[] = resp.data.data ?? [];
+      all.push(...items);
+      if (all.length >= (resp.data.totalSize ?? 0) || items.length < pageSize) break;
+      page++;
+    }
+    availableFiles.value = all;
   } catch {
     ElMessage.error('Failed to load thread dump files');
   } finally {

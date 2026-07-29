@@ -689,7 +689,7 @@ public class ThreadDumpAnalyzer {
             if (second.getJavaThreadState() == null) continue;
             if (!firstByNid.containsKey(second.getNid())) {
                 result.add(new VThreadStateChange(
-                        -1, second.getName(),
+                        second.getId(), second.getName(),
                         null, String.valueOf(second.getJavaThreadState())));
             }
         }
