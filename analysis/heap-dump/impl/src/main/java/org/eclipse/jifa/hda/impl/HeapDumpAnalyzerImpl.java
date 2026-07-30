@@ -520,6 +520,9 @@ public class HeapDumpAnalyzerImpl implements HeapDumpAnalyzer {
         if (classLoaderExplorerData != null) {
             return classLoaderExplorerData;
         }
+        // The context monitor now guards only the short queries (this one and
+        // queryDirectByteBufferData); the BFS-backed caches in AnalysisContext have their own
+        // locks or need none, so they no longer block whoever locks on the context.
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (context) {
             classLoaderExplorerData = context.classLoaderExplorerData.get();
@@ -781,10 +784,34 @@ public class HeapDumpAnalyzerImpl implements HeapDumpAnalyzer {
     @Override
     public PageView<TheString.Item> getStrings(String pattern, int page, int pageSize) {
         return $(() -> {
-            IResultTree tree = queryByCommand(context, "find_strings java.lang.String -pattern " +
-                                                       (pattern == null || pattern.equals("") ? ".*" : ".*" + pattern + ".*"));
-            List<?> strings = tree.getElements();
-            return PageViewBuilder.build(strings, new PagingRequest(page, pageSize), node -> {
+            // Let MAT do the matching: find_strings applies the pattern to the string value
+            // (IObject#getClassSpecificName), which is not what the result's first column exposes
+            // (that is the display name, i.e. "java.lang.String @ 0x... <value truncated at 256>").
+            // Filtering on the display name in Java would both match on class name and address and
+            // miss content beyond the truncation point.
+            String matPattern = pattern == null || pattern.isEmpty() ? ".*" : ".*" + pattern + ".*";
+            // Cache per pattern so that paging through one result set scans the heap only once.
+            // No locking: the query is idempotent, so a cold-start race at worst repeats the scan,
+            // whereas a lock held across a full-heap scan would stall every other search.
+            SoftReference<AnalysisContext.StringData> ref = context.stringsCache.get(matPattern);
+            AnalysisContext.StringData cachedData = ref != null ? ref.get() : null;
+            if (cachedData == null) {
+                // Pass the pattern as an argument instead of appending "-pattern <p>" to the
+                // command: the command string is tokenized on whitespace, so a spliced pattern
+                // containing a space would be parsed as several arguments and rejected.
+                Map<String, Object> args = new HashMap<>();
+                args.put("pattern", Pattern.compile(matPattern));
+                IResultTree tree = queryByCommand(context, "find_strings java.lang.String", args);
+                cachedData = new AnalysisContext.StringData();
+                cachedData.tree = tree;
+                cachedData.nodes = tree.getElements();
+                // Drop entries whose result has been reclaimed so the map does not keep growing.
+                context.stringsCache.values().removeIf(value -> value.get() == null);
+                context.stringsCache.put(matPattern, new SoftReference<>(cachedData));
+            }
+
+            IResultTree tree = cachedData.tree;
+            return PageViewBuilder.build(cachedData.nodes, new PagingRequest(page, pageSize), node -> {
                 TheString.Item item = new TheString.Item();
                 int id = tree.getContext(node).getObjectId();
                 item.setObjectId(id);
@@ -965,10 +992,30 @@ public class HeapDumpAnalyzerImpl implements HeapDumpAnalyzer {
             throw new CommonException("Unsupported grouping now");
         }
 
-        Map<String, Object> args = new HashMap<>();
-        args.put("objects", Helper.buildHeapObjectArgument(objectIds));
-
-        return queryByCommand(context, "merge_shortest_paths", args);
+        // Cache the BFS result by objectIds to avoid redundant O(N) graph traversals. The grouping
+        // is not part of the key because only FROM_GC_ROOTS reaches this point (guarded above).
+        AnalysisContext.MergePathTreeCacheKey cacheKey =
+                new AnalysisContext.MergePathTreeCacheKey(objectIds);
+        SoftReference<IResultTree> ref = context.mergePathTreeCache.get(cacheKey);
+        IResultTree cached = ref != null ? ref.get() : null;
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (context.mergePathTreeLock) {
+            ref = context.mergePathTreeCache.get(cacheKey);
+            cached = ref != null ? ref.get() : null;
+            if (cached != null) {
+                return cached;
+            }
+            // Entries whose tree has been reclaimed still pin their key, which holds one int per
+            // requested object. Drop them here so the map does not keep growing across a session.
+            context.mergePathTreeCache.values().removeIf(value -> value.get() == null);
+            Map<String, Object> args = new HashMap<>();
+            args.put("objects", Helper.buildHeapObjectArgument(objectIds));
+            IResultTree tree = queryByCommand(context, "merge_shortest_paths", args);
+            context.mergePathTreeCache.put(cacheKey, new SoftReference<>(tree));
+            return tree;
+        }
     }
 
     private PageView<GCRootPath.MergePathToGCRootsTreeNode> buildMergePathRootsNode(AnalysisContext context,
@@ -1124,90 +1171,99 @@ public class HeapDumpAnalyzerImpl implements HeapDumpAnalyzer {
     @Override
     public LeakReport getLeakReport() {
         return $(() -> {
-            AnalysisContext.LeakReportData data = context.leakReportData.get();
-            if (data == null) {
-                synchronized (context) {
-                    data = context.leakReportData.get();
-                    if (data == null) {
-                        IResult result = queryByCommand(context, "leakhunter");
-                        data = new AnalysisContext.LeakReportData();
-                        data.result = result;
-                        context.leakReportData = new SoftReference<>(data);
-                    }
-                }
+            // Check final LeakReport cache first (avoids BFS + object rebuild)
+            LeakReport cached = context.leakReportCache.get();
+            if (cached != null) {
+                return cached;
             }
-            IResult result = data.result;
-            LeakReport report = new LeakReport();
-            if (result instanceof TextResult) {
-                report.setInfo(((TextResult) result).getText());
-            } else if (result instanceof SectionSpec) {
-                report.setUseful(true);
-                SectionSpec sectionSpec = (SectionSpec) result;
-                report.setName(sectionSpec.getName());
-                List<Spec> specs = sectionSpec.getChildren();
-                for (int i = 0; i < specs.size(); i++) {
-                    QuerySpec spec = (QuerySpec) specs.get(i);
-                    String name = spec.getName();
-                    if (name == null || name.isEmpty()) {
-                        continue;
-                    }
-                    // LeakHunterQuery_Overview
-                    if (name.startsWith("Overview")) {
-                        IResultPie irtPie = (IResultPie) spec.getResult();
-                        List<? extends IResultPie.Slice> pieSlices = irtPie.getSlices();
+            synchronized (context.leakReportLock) {
+                cached = context.leakReportCache.get();
+                if (cached != null) {
+                    return cached;
+                }
 
-                        List<LeakReport.Slice> slices = new ArrayList<>();
-                        for (IResultPie.Slice slice : pieSlices) {
-                            slices.add(
-                                    new LeakReport.Slice(slice.getLabel(),
-                                                         Helper.fetchObjectId(slice.getContext()),
-                                                         slice.getValue(), slice.getDescription()));
+                AnalysisContext.LeakReportData data = context.leakReportData.get();
+                if (data == null) {
+                    IResult result = queryByCommand(context, "leakhunter");
+                    data = new AnalysisContext.LeakReportData();
+                    data.result = result;
+                    context.leakReportData = new SoftReference<>(data);
+                }
+                IResult result = data.result;
+                LeakReport report = new LeakReport();
+                if (result instanceof TextResult) {
+                    report.setInfo(((TextResult) result).getText());
+                } else if (result instanceof SectionSpec) {
+                    report.setUseful(true);
+                    SectionSpec sectionSpec = (SectionSpec) result;
+                    report.setName(sectionSpec.getName());
+                    List<Spec> specs = sectionSpec.getChildren();
+                    for (int i = 0; i < specs.size(); i++) {
+                        QuerySpec spec = (QuerySpec) specs.get(i);
+                        String name = spec.getName();
+                        if (name == null || name.isEmpty()) {
+                            continue;
                         }
-                        report.setSlices(slices);
-                    }
-                    // LeakHunterQuery_ProblemSuspect
-                    // LeakHunterQuery_Hint
-                    else if (name.startsWith("Problem Suspect") || name.startsWith("Hint")) {
-                        LeakReport.Record suspect = new LeakReport.Record();
-                        suspect.setIndex(i);
-                        suspect.setName(name);
-                        CompositeResult cr = (CompositeResult) spec.getResult();
-                        List<CompositeResult.Entry> entries = cr.getResultEntries();
-                        for (CompositeResult.Entry entry : entries) {
-                            String entryName = entry.getName();
-                            if (entryName == null || entryName.isEmpty()) {
-                                IResult r = entry.getResult();
-                                if (r instanceof QuerySpec &&
-                                    // LeakHunterQuery_ShortestPaths
-                                    ((QuerySpec) r).getName().equals("Shortest Paths To the Accumulation Point")) {
-                                    IResultTree tree = (IResultTree) ((QuerySpec) r).getResult();
-                                    RefinedResultBuilder builder = new RefinedResultBuilder(
-                                            new SnapshotQueryContext(context.snapshot), tree);
-                                    RefinedTree rst = (RefinedTree) builder.build();
-                                    List<?> elements = rst.getElements();
-                                    List<LeakReport.ShortestPath> paths = new ArrayList<>();
-                                    suspect.setPaths(paths);
-                                    for (Object row : elements) {
-                                        paths.add(buildPath(context.snapshot, rst, row));
+                        // LeakHunterQuery_Overview
+                        if (name.startsWith("Overview")) {
+                            IResultPie irtPie = (IResultPie) spec.getResult();
+                            List<? extends IResultPie.Slice> pieSlices = irtPie.getSlices();
+
+                            List<LeakReport.Slice> slices = new ArrayList<>();
+                            for (IResultPie.Slice slice : pieSlices) {
+                                slices.add(
+                                        new LeakReport.Slice(slice.getLabel(),
+                                                             Helper.fetchObjectId(slice.getContext()),
+                                                             slice.getValue(), slice.getDescription()));
+                            }
+                            report.setSlices(slices);
+                        }
+                        // LeakHunterQuery_ProblemSuspect
+                        // LeakHunterQuery_Hint
+                        else if (name.startsWith("Problem Suspect") || name.startsWith("Hint")) {
+                            LeakReport.Record suspect = new LeakReport.Record();
+                            suspect.setIndex(i);
+                            suspect.setName(name);
+                            CompositeResult cr = (CompositeResult) spec.getResult();
+                            List<CompositeResult.Entry> entries = cr.getResultEntries();
+                            for (CompositeResult.Entry entry : entries) {
+                                String entryName = entry.getName();
+                                if (entryName == null || entryName.isEmpty()) {
+                                    IResult r = entry.getResult();
+                                    if (r instanceof QuerySpec &&
+                                        // LeakHunterQuery_ShortestPaths
+                                        ((QuerySpec) r).getName().equals("Shortest Paths To the Accumulation Point")) {
+                                        IResultTree tree = (IResultTree) ((QuerySpec) r).getResult();
+                                        RefinedResultBuilder builder = new RefinedResultBuilder(
+                                                new SnapshotQueryContext(context.snapshot), tree);
+                                        RefinedTree rst = (RefinedTree) builder.build();
+                                        List<?> elements = rst.getElements();
+                                        List<LeakReport.ShortestPath> paths = new ArrayList<>();
+                                        suspect.setPaths(paths);
+                                        for (Object row : elements) {
+                                            paths.add(buildPath(context.snapshot, rst, row));
+                                        }
                                     }
                                 }
+                                // LeakHunterQuery_Description
+                                // LeakHunterQuery_Overview
+                                else if ((entryName.startsWith("Description") || entryName.startsWith("Overview"))) {
+                                    TextResult desText = (TextResult) entry.getResult();
+                                    suspect.setDesc(desText.getText());
+                                }
                             }
-                            // LeakHunterQuery_Description
-                            // LeakHunterQuery_Overview
-                            else if ((entryName.startsWith("Description") || entryName.startsWith("Overview"))) {
-                                TextResult desText = (TextResult) entry.getResult();
-                                suspect.setDesc(desText.getText());
+                            List<LeakReport.Record> records = report.getRecords();
+                            if (records == null) {
+                                report.setRecords(records = new ArrayList<>());
                             }
+                            records.add(suspect);
                         }
-                        List<LeakReport.Record> records = report.getRecords();
-                        if (records == null) {
-                            report.setRecords(records = new ArrayList<>());
-                        }
-                        records.add(suspect);
                     }
                 }
+
+                context.leakReportCache = new SoftReference<>(report);
+                return report;
             }
-            return report;
         });
     }
 

@@ -14,16 +14,19 @@
 package org.eclipse.jifa.hda.impl;
 
 import org.eclipse.jifa.hda.api.Model;
+import org.eclipse.jifa.hda.api.Model.LeakReport;
 import org.eclipse.mat.query.IResult;
 import org.eclipse.mat.query.IResultTree;
 import org.eclipse.mat.query.refined.RefinedTable;
 import org.eclipse.mat.snapshot.ISnapshot;
 
 import java.lang.ref.SoftReference;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AnalysisContext {
 
@@ -34,6 +37,39 @@ public class AnalysisContext {
     volatile SoftReference<DirectByteBufferData> directByteBufferData = new SoftReference<>(null);
 
     volatile SoftReference<LeakReportData> leakReportData= new SoftReference<>(null);
+
+    /**
+     * Cache for find_strings results, keyed by the MAT pattern actually used. Keying by pattern
+     * rather than caching every String in the heap keeps the retained set proportional to what was
+     * asked for, and still serves the common case of paging through one search result.
+     */
+    final ConcurrentHashMap<String, SoftReference<StringData>> stringsCache = new ConcurrentHashMap<>();
+
+    /** Cache for merge_shortest_paths IResultTree, keyed by the requested objectIds */
+    final ConcurrentHashMap<MergePathTreeCacheKey, SoftReference<IResultTree>> mergePathTreeCache = new ConcurrentHashMap<>();
+
+    /**
+     * Monitor for populating {@link #mergePathTreeCache}. Not the context monitor: this class is
+     * public and shared, so running a minutes-long BFS while holding its monitor would block
+     * unrelated code that locks on the context (e.g. the classLoaderExplorerData path).
+     * <p>
+     * This is a single lock rather than a per-key one, so the first BFS for one set of objectIds
+     * serializes the first BFS for any other set. That is an accepted trade-off for the paged UI
+     * callers, which rarely request different object sets concurrently; cache hits never take the
+     * lock. If concurrent distinct BFS runs become a requirement, switch to per-key memoization
+     * (e.g. a FutureTask per key) rather than widening this lock.
+     */
+    final Object mergePathTreeLock = new Object();
+
+    /** Cache for the final LeakReport Java object */
+    volatile SoftReference<LeakReport> leakReportCache = new SoftReference<>(null);
+
+    /**
+     * Monitor for building the leak report. leakhunter runs a full-heap BFS that can take minutes,
+     * so it must not be done while holding the context monitor, which is also used by the
+     * classLoaderExplorerData path and is lockable by any code holding this public context.
+     */
+    final Object leakReportLock = new Object();
 
     AnalysisContext(ISnapshot snapshot) {
         this.snapshot = snapshot;
@@ -87,6 +123,38 @@ public class AnalysisContext {
 
     static class LeakReportData {
         IResult result;
+    }
+
+    static class StringData {
+        IResultTree tree;
+        List<?> nodes;
+    }
+
+    static class MergePathTreeCacheKey {
+        final int[] objectIds;
+        final int hash;
+
+        MergePathTreeCacheKey(int[] objectIds) {
+            // Copy so the key is immune to later mutation of the caller's array, and sort so that
+            // the same object set requested in a different order still hits the cache. The
+            // merge_shortest_paths result does not depend on the input order, which only affects
+            // sibling enumeration order in the resulting tree, and no caller relies on that.
+            this.objectIds = objectIds.clone();
+            Arrays.sort(this.objectIds);
+            this.hash = Arrays.hashCode(this.objectIds);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof MergePathTreeCacheKey)) return false;
+            return Arrays.equals(objectIds, ((MergePathTreeCacheKey) o).objectIds);
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
     }
 
     @Override

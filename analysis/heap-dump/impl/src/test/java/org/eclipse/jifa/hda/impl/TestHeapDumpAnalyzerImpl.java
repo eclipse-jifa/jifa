@@ -16,6 +16,7 @@ import com.sun.management.HotSpotDiagnosticMXBean;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jifa.analysis.listener.ProgressListener;
+import org.eclipse.jifa.common.domain.vo.PageView;
 import org.eclipse.jifa.hda.api.HeapDumpAnalyzer;
 import org.eclipse.jifa.hda.api.Model;
 import org.eclipse.jifa.hda.api.SearchType;
@@ -31,8 +32,24 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @Slf4j
 public class TestHeapDumpAnalyzerImpl {
+
+    /** Regex-safe marker searched for by the getStrings tests. */
+    private static final String SENTINEL = "JIFA_GETSTRINGS_SENTINEL_c4f1";
+
+    /**
+     * Offset of {@link #SENTINEL} inside {@link #SENTINEL_HOLDER}: past the 256 characters that
+     * survive in an object's display name, but within the 1024 that MAT resolves as its value.
+     */
+    private static final int SENTINEL_OFFSET = 300;
+
+    /** Kept in a field so that the string stays reachable in the dump taken below. */
+    @SuppressWarnings("unused")
+    private static final String SENTINEL_HOLDER = "x".repeat(SENTINEL_OFFSET) + SENTINEL;
 
     private static Path DIRECTORY;
 
@@ -160,6 +177,41 @@ public class TestHeapDumpAnalyzerImpl {
     @Test
     public void testGetStrings() {
         ANALYZER.getStrings("abc", 1, 10);
+    }
+
+    /**
+     * find_strings must match the string value, not the display name. Matching the display name
+     * would make every String match its own class name and address.
+     */
+    @Test
+    public void testGetStringsDoesNotMatchDisplayNamePrefix() {
+        int all = ANALYZER.getStrings("", 1, 10).getTotalSize();
+        assertTrue(all > 0, "the dump is expected to contain strings");
+        assertTrue(ANALYZER.getStrings("java\\.lang\\.String @ 0x", 1, 10).getTotalSize() < all,
+                   "searching the display name prefix must not match every string");
+    }
+
+    /**
+     * The pattern must be matched against the whole string value. MAT resolves the value up to
+     * 1024 characters, whereas the display name exposed as the result's first column truncates it
+     * at 256, so the string holding the sentinel past that point is reported with a label that does
+     * not contain the sentinel at all. Such a hit can only be produced by matching the value, which
+     * is what makes this a regression guard against filtering on the label instead.
+     */
+    @Test
+    public void testGetStringsMatchesValueBeyondDisplayNameTruncation() {
+        PageView<Model.TheString.Item> hits = ANALYZER.getStrings(SENTINEL, 1, 100);
+        assertTrue(hits.getData().stream().anyMatch(item -> !item.getLabel().contains(SENTINEL)),
+                   "expected a hit whose label does not contain the sentinel, i.e. the string " +
+                   "holding it at offset " + SENTINEL_OFFSET + ", got: " + hits.getData());
+    }
+
+    /** Paging must be served from the same result set, i.e. sizes stay stable across pages. */
+    @Test
+    public void testGetStringsPagingIsStable() {
+        PageView<Model.TheString.Item> first = ANALYZER.getStrings("java", 1, 5);
+        PageView<Model.TheString.Item> second = ANALYZER.getStrings("java", 2, 5);
+        assertEquals(first.getTotalSize(), second.getTotalSize());
     }
 
     @Test
