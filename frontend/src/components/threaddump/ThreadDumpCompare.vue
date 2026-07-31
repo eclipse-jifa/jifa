@@ -221,11 +221,18 @@ async function runCompare() {
 // ── Init ─────────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
-  // Capture query param before async load to avoid race with route changes
-  const preselect = route.query.file1 as string | undefined;
+  // Capture query params before async load to avoid race with route changes
+  const preselect1 = route.query.file1 as string | undefined;
+  const preselect2 = route.query.file2 as string | undefined;
   await loadFiles();
-  if (preselect && availableFiles.value.some(f => f.uniqueName === preselect)) {
-    file1.value = preselect;
+  if (preselect1 && availableFiles.value.some(f => f.uniqueName === preselect1)) {
+    file1.value = preselect1;
+  }
+  if (preselect2 && availableFiles.value.some(f => f.uniqueName === preselect2)) {
+    file2.value = preselect2;
+  }
+  if (file1.value && file2.value && file1.value !== file2.value) {
+    await runCompare();
   }
 });
 </script>
