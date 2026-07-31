@@ -13,33 +13,27 @@
  * AI Disclosure: This file was largely AI-generated with GitHub Copilot.
  * The AI-generated portions are made available under CC0-1.0. The human
  * contributor has reviewed and verified the code.
- * Assisted-by: GitHub Copilot (Claude Sonnet 4.5)
+ * Assisted-by: GitHub Copilot (Claude Sonnet 4.6)
  ********************************************************************************/
 
 package org.eclipse.jifa.tda.vo;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.util.List;
+import lombok.NoArgsConstructor;
 
 @Data
-public class SearchHit {
+@NoArgsConstructor
+@AllArgsConstructor
+public class VThreadStateChange {
 
     private int id;
 
     private String name;
 
-    private String javaState;
+    /** {@code null} if the thread is new (only present in the second dump). */
+    private String stateBefore;
 
-    private String osState;
-
-    private double cpu;
-
-    private double elapsed;
-
-    /**
-     * Raw content lines of the thread's stack trace entry.
-     * Line 0 is the thread header; subsequent lines are stack frames.
-     */
-    private List<String> lines;
+    /** {@code null} if the thread disappeared (only present in the first dump). */
+    private String stateAfter;
 }

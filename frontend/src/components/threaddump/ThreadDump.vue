@@ -13,6 +13,8 @@
 <script setup lang="ts">
 import { tdt } from '@/i18n/i18n';
 import { useAnalysisApiRequester } from '@/composables/analysis-api-requester';
+import { useAnalysisStore } from '@/stores/analysis';
+import { useRouter } from 'vue-router';
 import { prettyTime } from '@/support/utils';
 import {
   Clock,
@@ -35,6 +37,12 @@ import ThreadDumpSearch from '@/components/threaddump/ThreadDumpSearch.vue';
 import { stateTagStyle } from '@/components/threaddump/thread-state-colors';
 
 const { request } = useAnalysisApiRequester();
+const analysisStore = useAnalysisStore();
+const router = useRouter();
+
+function openCompare() {
+  router.push({ name: 'ThreadDumpCompare', query: { file1: analysisStore.target } });
+}
 
 const activeNames = ref<string[]>([
   'basicInfo',
@@ -230,6 +238,11 @@ function buildThreadStat(key, states, counts, icon, threadType?) {
 
     <el-scrollbar>
       <div style="padding: 0 10px">
+        <div style="display:flex; justify-content:flex-end; padding: 6px 0 4px">
+          <el-button size="small" @click="openCompare">
+            {{ tdt('compareWithAnother') ?? 'Compare with another dump' }}
+          </el-button>
+        </div>
         <el-collapse v-model="activeNames">
           <el-collapse-item name="basicInfo" :title="tdt('basicInfo')">
             <el-table stripe :show-header="false" :data="basicInfo" v-loading="loading">

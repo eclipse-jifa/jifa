@@ -62,3 +62,25 @@ export function stateTagStyle(state: string): Record<string, string> {
     fontWeight: '500'
   };
 }
+
+// ── Delta helpers (shared across all compare components) ─────────────────────
+
+export function deltaClass(d: number, isNeutral: boolean = false): string {
+  if (d > 0) return isNeutral ? 'delta-neutral-pos' : 'delta-pos';
+  if (d < 0) return isNeutral ? 'delta-neutral-neg' : 'delta-neg';
+  return 'delta-zero';
+}
+
+export function deltaText(d: number): string {
+  if (d > 0) return `▲ +${d}`;
+  if (d < 0) return `▼ ${d}`;
+  return '=';
+}
+
+/**
+ * Generic page view response shape as returned by the Jifa analysis API.
+ */
+export interface PageView<T> {
+  data: T[];
+  totalSize: number;
+}

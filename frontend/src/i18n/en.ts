@@ -46,6 +46,7 @@ export default {
     menu: {
       files: "Files",
       analysisView: "Analysis View",
+      threadDumpCompare: "Thread Dump Compare",
     },
 
     serviceUnavailable: {

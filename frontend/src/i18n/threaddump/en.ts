@@ -35,6 +35,7 @@ export default {
   loadFileContent: "Load",
   loadMoreFileContent: "Load More",
   threadNameLabel: "Thread Name",
+  compareWithAnother: "Compare with another dump",
 
   // ----- Blocked Threads -----
   blockedThreadsLabel: "Blocked Threads",
@@ -56,6 +57,69 @@ export default {
     javaThreads: "Java Threads",
     nonJavaThreads: "Non-Java Threads",
     noCpuData: "This thread dump does not contain CPU usage information.",
+  },
+
+  // ----- CPU Delta (Compare) -----
+  cpuConsumingThreadsCompare: {
+    selectPrompt: "Select second thread dump to compare",
+    noData: "No threads with matching native IDs and CPU data found in both dumps.",
+    cpuDeltaLabel: "CPU delta",
+    cpuFirstLabel: "CPU (first dump)",
+    cpuSecondLabel: "CPU (second dump)",
+    hours: "hours",
+    minutes: "minutes",
+    seconds: "seconds",
+    milliseconds: "ms",
+  },
+
+  // ----- Thread Dump Compare Page -----
+  threadDumpCompare: {
+    title: "Thread Dump Compare",
+    selectFile1: "First Dump",
+    selectFile2: "Second Dump",
+    selectPlaceholder: "Select thread dump file",
+    compareButton: "Compare",
+    basicInfo: "Basic Information",
+    timeDiff: "Time difference",
+    vmInfoMatch: "VM matches",
+    vmInfoMismatch: "VM differs",
+    diagnosis: "Diagnosis",
+    threadSummary: "Thread Summary",
+    threadGroupSummary: "Thread Group Summary",
+    cpuDelta: "CPU Delta",
+    stateDistribution: "State Distribution",
+    stateChanges: "Thread State Changes",
+    persistentBlockers: "Persistent Blockers (blocked in both dumps)",
+    deltaPositive: "increased",
+    deltaNegative: "decreased",
+    noFilesSelected: "Select two thread dump files to compare",
+    loadingFiles: "Loading files...",
+    noFilesAvailable: "No thread dump files found",
+    noFilesAvailableHint: "Upload a thread dump file first to start comparing.",
+    uploadNow: "Upload now",
+    dump1Label: "Dump 1",
+    dump2Label: "Dump 2",
+    deltaLabel: "Δ",
+    threadType: "Type",
+    count: "Count",
+    groupName: "Group",
+  },
+
+  // ----- Diagnosis Compare -----
+  diagnoseCompare: {
+    issue: "Issue",
+    noIssue: "✓ No issue",
+    new: "New",
+    resolved: "Resolved",
+    // Human-readable short labels for each issue type (used as row label)
+    issueType: {
+      DEADLOCK:                  "Deadlock",
+      HIGH_BLOCKED_THREAD_COUNT: "Blocked threads",
+      HIGH_THREAD_COUNT:         "High thread count",
+      HIGH_STACK_SIZE:           "Large stack",
+      HIGH_CPU_RATIO:            "High CPU ratio",
+      THREAD_THROWING_EXCEPTION: "Exception throwing",
+    },
   },
 
   // ----- Diagnosis -----
@@ -128,4 +192,50 @@ export default {
     elapsedLabel: "Elapsed",
   },
 
+  // ----- State Distribution Compare -----
+  stateDistributionCompare: {
+    state: "State",
+    delta: "Δ",
+    noData: "No thread state data available.",
+  },
+
+  // ----- Thread State Changes -----
+  threadStateChanges: {
+    changeType: "Change type",
+    dump1Impact: "Dump 1",
+    dump2Impact: "Dump 2",
+    delta: "Δ",
+    transitionsTitle: "State transition breakdown",
+    count: "Count",
+    summaryChanged: "State changed",
+    summaryDisappeared: "Disappeared",
+    summaryNew: "New in second dump",
+    tabChanged: "State Changed",
+    tabDisappeared: "Disappeared",
+    tabNew: "New",
+    thread: "Thread",
+    stateBefore: "State (Dump 1)",
+    stateAfter: "State (Dump 2)",
+    noChanges: "No threads changed state between the two dumps.",
+    noDisappeared: "No threads disappeared between the two dumps.",
+    noNew: "No new threads appeared in the second dump.",
+  },
+
+  // ----- Persistent Blockers -----
+  persistentBlockers: {
+    warningTitle: "1 thread was blocked in both dumps | {count} threads were blocked in both dumps",
+    summaryType: "Type",
+    dump1: "Dump 1",
+    dump2: "Dump 2",
+    delta: "Δ",
+    allBlocked: "Blocked threads (all)",
+    persistentOnly: "Blocked in both dumps",
+    resolved: "Resolved blockers",
+    introduced: "New blockers in dump 2",
+    detailsTitle: "Threads blocked in both dumps",
+    thread: "Thread",
+    actions: "Actions",
+    inspect: "Inspect",
+    noPersistentBlockers: "No threads were blocked in both dumps – no persistent contention detected.",
+  },
 }

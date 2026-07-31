@@ -24,6 +24,7 @@ import org.eclipse.jifa.common.util.PageViewBuilder;
 import org.eclipse.jifa.tda.diagnoser.Diagnostic;
 import org.eclipse.jifa.tda.diagnoser.ThreadDumpAnalysisConfig;
 import org.eclipse.jifa.tda.diagnoser.ThreadDumpDiagnoser;
+import org.eclipse.jifa.tda.enums.JavaThreadState;
 import org.eclipse.jifa.tda.enums.MonitorState;
 import org.eclipse.jifa.tda.enums.ThreadType;
 import org.eclipse.jifa.tda.model.CallSiteTree;
@@ -43,6 +44,9 @@ import org.eclipse.jifa.tda.vo.VBlockingThread;
 import org.eclipse.jifa.tda.vo.VFrame;
 import org.eclipse.jifa.tda.vo.VMonitor;
 import org.eclipse.jifa.tda.vo.VThread;
+import org.eclipse.jifa.tda.vo.VThreadDelta;
+import org.eclipse.jifa.tda.vo.VThreadStateChange;
+import org.eclipse.jifa.tda.vo.VMultiDumpComparison;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -53,9 +57,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -407,6 +414,39 @@ public class ThreadDumpAnalyzer {
                 .collect(Collectors.toList());
     }
 
+    /** Returns threads with the highest CPU delta between two dumps (matched by NID), descending. */
+    public List<VThreadDelta> cpuConsumingThreadsCompare(@ApiParameterMeta(comparisonTargetPath = true) Path other,
+                                                          @ApiParameterMeta(required = false) ThreadType type,
+                                                          int max) {
+        ThreadDumpAnalyzer otherAnalyzer = build(other, ProgressListener.NoOpProgressListener);
+        Map<Long, Thread> otherByNid = otherAnalyzer.snapshot.getThreadMap().values().stream()
+                .collect(Collectors.toMap(Thread::getNid, t -> t, (a, b) -> a));
+
+        int limit = max < 0 ? Integer.MAX_VALUE : max;
+        List<VThreadDelta> result = new ArrayList<>();
+
+        for (Thread first : snapshot.getThreadMap().values()) {
+            if (type != null && first.getType() != type) {
+                continue;
+            }
+            Thread second = otherByNid.get(first.getNid());
+            if (second == null || second.getCpu() <= 0) {
+                continue;
+            }
+            double delta = second.getCpu() - first.getCpu();
+            result.add(new VThreadDelta(first.getId(), first.getName(),
+                                        first.getCpu() > 0 ? first.getCpu() : 0,
+                                        second.getCpu(),
+                                        delta));
+        }
+
+        result.sort(Comparator.comparingDouble(VThreadDelta::getCpuDelta).reversed());
+        if (result.size() > limit) {
+            result = result.subList(0, limit);
+        }
+        return result;
+    }
+
     /**
      * Diagnoses the thread dump for potential issues based on the given
      * configuration and returns any issues found.
@@ -608,5 +648,186 @@ public class ThreadDumpAnalyzer {
                           || m.getState() == MonitorState.WAITING_TO_RE_LOCK)
                 .findFirst()
                 .orElse(null);
+    }
+
+    /** Returns state-changed, new, and disappeared threads between two dumps (matched by NID). */
+    public List<VThreadStateChange> threadStateChanges(
+            @ApiParameterMeta(comparisonTargetPath = true) Path other) {
+        if (other == null) {
+            throw new IllegalArgumentException("other must not be null");
+        }
+        ThreadDumpAnalyzer otherAnalyzer = build(other, ProgressListener.NoOpProgressListener);
+
+        Map<Long, JavaThread> firstByNid = snapshot.getJavaThreads().stream()
+                .collect(Collectors.toMap(Thread::getNid, t -> t, (a, b) -> a));
+        Map<Long, JavaThread> secondByNid = otherAnalyzer.snapshot.getJavaThreads().stream()
+                .collect(Collectors.toMap(Thread::getNid, t -> t, (a, b) -> a));
+
+        List<VThreadStateChange> result = new ArrayList<>();
+
+        // threads present in both dumps
+        for (JavaThread first : snapshot.getJavaThreads()) {
+            if (first.getJavaThreadState() == null) continue;
+            JavaThread second = secondByNid.get(first.getNid());
+            if (second == null) {
+                // disappeared
+                result.add(new VThreadStateChange(
+                        first.getId(), first.getName(),
+                        String.valueOf(first.getJavaThreadState()), null));
+            } else if (second.getJavaThreadState() != null
+                    && first.getJavaThreadState() != second.getJavaThreadState()) {
+                // state changed
+                result.add(new VThreadStateChange(
+                        first.getId(), first.getName(),
+                        String.valueOf(first.getJavaThreadState()),
+                        String.valueOf(second.getJavaThreadState())));
+            }
+        }
+
+        // threads only in the second dump
+        for (JavaThread second : otherAnalyzer.snapshot.getJavaThreads()) {
+            if (second.getJavaThreadState() == null) continue;
+            if (!firstByNid.containsKey(second.getNid())) {
+                result.add(new VThreadStateChange(
+                        second.getId(), second.getName(),
+                        null, String.valueOf(second.getJavaThreadState())));
+            }
+        }
+
+        // sort: changed → disappeared → new, then by name
+        result.sort(Comparator
+                .<VThreadStateChange, Integer>comparing(e -> {
+                    if (e.getStateBefore() != null && e.getStateAfter() != null) return 0; // changed
+                    if (e.getStateAfter() == null) return 1;                               // disappeared
+                    return 2;                                                               // new
+                })
+                .thenComparing(VThreadStateChange::getName));
+        return result;
+    }
+
+    /** Returns threads blocked ({@code BLOCKED_ON_MONITOR_ENTER}) in both dumps (matched by NID). */
+    public List<VThread> persistentBlockers(
+            @ApiParameterMeta(comparisonTargetPath = true) Path other) {
+        if (other == null) {
+            throw new IllegalArgumentException("other must not be null");
+        }
+        ThreadDumpAnalyzer otherAnalyzer = build(other, ProgressListener.NoOpProgressListener);
+
+        Set<Long> blockedNidsInSecond = otherAnalyzer.snapshot.getJavaThreads().stream()
+                .filter(t -> t.getJavaThreadState() == JavaThreadState.BLOCKED_ON_MONITOR_ENTER)
+                .map(Thread::getNid)
+                .collect(Collectors.toCollection(HashSet::new));
+
+        return snapshot.getJavaThreads().stream()
+                .filter(t -> t.getJavaThreadState() == JavaThreadState.BLOCKED_ON_MONITOR_ENTER)
+                .filter(t -> blockedNidsInSecond.contains(t.getNid()))
+                .sorted(Comparator.comparing(Thread::getName))
+                .map(this::convertToVThread)
+                .collect(Collectors.toList());
+    }
+
+    /** Compares up to four dumps; returns a matrix view with one row per unique thread (by NID). */
+    public VMultiDumpComparison compareMultiple(
+            @ApiParameterMeta(comparisonTargetPath = true)           Path other1,
+            @ApiParameterMeta(required = false, comparisonTargetPath = true) Path other2,
+            @ApiParameterMeta(required = false, comparisonTargetPath = true) Path other3) {
+
+        List<ThreadDumpAnalyzer> analyzers = new ArrayList<>();
+        analyzers.add(this);
+        analyzers.add(build(other1, ProgressListener.NoOpProgressListener));
+        if (other2 != null) analyzers.add(build(other2, ProgressListener.NoOpProgressListener));
+        if (other3 != null) analyzers.add(build(other3, ProgressListener.NoOpProgressListener));
+
+        int n = analyzers.size();
+
+
+        List<VMultiDumpComparison.DumpSummary> summaries = new ArrayList<>();
+        for (ThreadDumpAnalyzer a : analyzers) {
+            VMultiDumpComparison.DumpSummary s = new VMultiDumpComparison.DumpSummary();
+            s.setName(java.nio.file.Path.of(a.snapshot.getPath()).getFileName().toString());
+            s.setDeadLockCount(a.snapshot.getDeadLockThreads() != null
+                    ? a.snapshot.getDeadLockThreads().size() : 0);
+
+            Map<String, Integer> stateCounts = new java.util.LinkedHashMap<>();
+            int total = 0;
+            for (JavaThread t : a.snapshot.getJavaThreads()) {
+                if (t.getJavaThreadState() != null) {
+                    String st = String.valueOf(t.getJavaThreadState());
+                    stateCounts.merge(st, 1, Integer::sum);
+                    total++;
+                }
+            }
+            s.setThreadCount(total);
+            s.setStateCounts(stateCounts);
+            summaries.add(s);
+        }
+
+        // NID → [name, state in dump 0, state in dump 1, ...]
+        Map<Long, String[]> matrix = new LinkedHashMap<>();
+
+        for (int i = 0; i < n; i++) {
+            for (JavaThread t : analyzers.get(i).snapshot.getJavaThreads()) {
+                long nid = t.getNid();
+                if (!matrix.containsKey(nid)) {
+                    // slot 0 = name, slots 1..n = states per dump
+                    String[] row = new String[n + 1];
+                    row[0] = t.getName();
+                    matrix.put(nid, row);
+                }
+                String[] row = matrix.get(nid);
+                if (t.getJavaThreadState() != null) {
+                    row[i + 1] = String.valueOf(t.getJavaThreadState());
+                }
+                // Use first non-null name found
+                if (row[0] == null && t.getName() != null) {
+                    row[0] = t.getName();
+                }
+            }
+        }
+
+
+        final String BLOCKED = String.valueOf(JavaThreadState.BLOCKED_ON_MONITOR_ENTER);
+        List<VMultiDumpComparison.ThreadRow> rows = new ArrayList<>();
+
+        for (String[] cells : matrix.values()) {
+            VMultiDumpComparison.ThreadRow row = new VMultiDumpComparison.ThreadRow();
+            row.setName(cells[0]);
+
+            List<String> states = new ArrayList<>(n);
+            int presentInCount = 0;
+            int blockedInCount = 0;
+            String prevState = null;
+            boolean changed = false;
+
+            for (int i = 1; i <= n; i++) {
+                String st = cells[i]; // null = not present in this dump
+                states.add(st);
+                if (st != null) {
+                    presentInCount++;
+                    if (BLOCKED.equals(st)) blockedInCount++;
+                    if (prevState != null && !prevState.equals(st)) changed = true;
+                    prevState = st;
+                }
+            }
+
+            row.setStates(states);
+            row.setAlwaysBlocked(presentInCount > 0 && blockedInCount == presentInCount);
+            row.setStateChanged(changed);
+            rows.add(row);
+        }
+
+        // sort: alwaysBlocked first, then stateChanged, then rest; by name within groups
+        rows.sort(Comparator
+                .<VMultiDumpComparison.ThreadRow, Integer>comparing(r -> {
+                    if (r.isAlwaysBlocked()) return 0;
+                    if (r.isStateChanged())  return 1;
+                    return 2;
+                })
+                .thenComparing(r -> r.getName() != null ? r.getName() : ""));
+
+        VMultiDumpComparison result = new VMultiDumpComparison();
+        result.setDumpOverviews(summaries);
+        result.setThreadRows(rows);
+        return result;
     }
 }

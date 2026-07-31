@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import {t} from '@/i18n/i18n';
 import {useRoute, useRouter} from 'vue-router';
-import {DataAnalysis, Files} from '@element-plus/icons-vue';
+import {DataAnalysis, Files, ScaleToOriginal} from '@element-plus/icons-vue';
 import {useAnalysisStore} from '@/stores/analysis';
 import type {FileType} from '@/composables/file-types';
 
@@ -55,6 +55,13 @@ function onSelect(index) {
         <el-menu-item index="Analysis" :disabled="!analysis.target">
           <el-icon>
             <DataAnalysis/>
+          </el-icon>
+        </el-menu-item>
+      </el-tooltip>
+      <el-tooltip placement="right" :show-arrow="false" :offset="6" :content="t('menu.threadDumpCompare')">
+        <el-menu-item index="ThreadDumpCompare">
+          <el-icon>
+            <ScaleToOriginal/>
           </el-icon>
         </el-menu-item>
       </el-tooltip>

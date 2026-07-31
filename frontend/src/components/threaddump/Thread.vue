@@ -12,6 +12,7 @@
  -->
 <script setup lang="ts">
 import { useAnalysisApiRequester } from '@/composables/analysis-api-requester';
+import { THREAD_DUMP } from '@/composables/file-types';
 import { tdt } from '@/i18n/i18n';
 import { Search } from '@element-plus/icons-vue';
 
@@ -31,10 +32,21 @@ const props = defineProps({
   ids: {
     type: Array as () => number[],
     required: false
+  },
+  /** When set, API calls use this target instead of the global analysis store. */
+  target: {
+    type: String,
+    required: false
   }
 });
 
-const { request } = useAnalysisApiRequester();
+const { request, requestWithTarget } = useAnalysisApiRequester();
+
+function apiRequest(api: string, params: object) {
+  return props.target
+    ? requestWithTarget(api, THREAD_DUMP, props.target, params)
+    : request(api, params);
+}
 
 const loading = ref(false);
 
@@ -55,7 +67,7 @@ function toggleContent(row) {
 
   loading.value = true;
   let id = row.id;
-  request('rawContentOfThread', {
+  apiRequest('rawContentOfThread', {
     id
   }).then((content) => {
     row.content = content.join('\n');
@@ -74,7 +86,7 @@ function loadThreads() {
     page: page.value,
     pageSize
   };
-  request(
+  apiRequest(
     groupName ? 'threadsOfGroup' : 'threads',
     groupName
       ? {

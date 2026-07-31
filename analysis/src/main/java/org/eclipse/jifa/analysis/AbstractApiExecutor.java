@@ -209,7 +209,11 @@ public abstract class AbstractApiExecutor<Analyzer> implements ApiExecutor {
             Validate.isTrue(!(targetPath && comparisonTargetPath));
             if (targetPath || comparisonTargetPath) {
                 Validate.isTrue(type == Path.class);
-                required = true;
+                // targetPath is always required; comparisonTargetPath may be optional
+                // (required flag was already set from @ApiParameterMeta above)
+                if (targetPath) {
+                    required = true;
+                }
             }
             if (type == Path.class) {
                 Validate.isTrue(targetPath || comparisonTargetPath);
